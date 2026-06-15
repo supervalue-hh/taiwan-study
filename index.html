@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台湾語学習アプリ</title>
+<style>
+  :root {
+    --red: #FF0000;
+    --black: #111111;
+    --white: #FFFFFF;
+    --gray-light: #F5F5F5;
+    --gray-mid: #CCCCCC;
+    --gray-dark: #666666;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif; background: var(--white); color: var(--black); min-height: 100vh; }
+
+  header {
+    background: var(--red);
+    color: var(--white);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 { font-size: 1.1rem; font-weight: bold; letter-spacing: 0.1em; }
+  header span { font-size: 1.4rem; }
+
+  nav {
+    display: flex;
+    background: var(--white);
+    border-bottom: 1px solid var(--black);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    flex: none;
+    min-width: 64px;
+    padding: 12px 10px;
+    border: none;
+    background: none;
+    font-size: 0.78rem;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    color: var(--gray-dark);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  nav button.active { color: var(--black); border-bottom-color: var(--black); }
+  nav button:hover { color: var(--black); background: var(--gray-light); }
+
+  .screen { display: none; padding: 24px 16px; max-width: 600px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .cat-btn {
+    padding: 12px 8px;
+    border: 1px solid var(--gray-mid);
+    border-radius: 0;
+    background: var(--white);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+    text-align: center;
+    transition: all 0.15s;
+    color: var(--black);
+  }
+  .cat-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
+  .cat-btn:hover { border-color: var(--black); }
+
+  /* フラッシュカード */
+  .card-container { perspective: 1000px; margin: 16px 0; }
+  .card {
+    width: 100%; height: 220px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s;
+    cursor: pointer;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-front, .card-back {
+    position: absolute;
+    width: 100%; height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border: 1px solid var(--black);
+  }
+  .card-front { background: var(--gray-light); }
+  .card-back { background: var(--white); transform: rotateY(180deg); }
+
+  .chinese-text { font-size: 3rem; margin-bottom: 4px; color: var(--black); }
+  .romanize { font-size: 0.9rem; color: var(--gray-dark); }
+  .katakana { font-size: 1rem; color: var(--red); font-weight: bold; margin-top: 2px; }
+  .meaning { font-size: 1.5rem; font-weight: bold; color: var(--black); }
+  .example-block {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--gray-mid);
+    width: 100%; text-align: center;
+  }
+  .example-label { font-size: 0.68rem; color: var(--gray-dark); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .example-chinese { font-size: 1.1rem; color: var(--black); margin-bottom: 2px; }
+  .example-roman { font-size: 0.8rem; color: var(--gray-dark); }
+  .tap-hint { font-size: 0.75rem; color: var(--gray-dark); margin-top: 10px; letter-spacing: 0.05em; }
+
+  .speak-btn {
+    background: none;
+    border: 1px solid var(--gray-mid);
+    border-radius: 0;
+    width: 40px; height: 40px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    margin: 6px auto 0;
+  }
+  .speak-btn:hover { background: var(--gray-light); border-color: var(--black); }
+  .speak-btn.speaking { background: var(--black); border-color: var(--black); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  .no-voice-msg { font-size: 0.75rem; color: var(--red); text-align: center; margin-top: 4px; }
+
+  .card-controls {
+    display: flex; gap: 8px; justify-content: center;
+    margin-top: 12px; flex-wrap: wrap;
+  }
+  .card-controls button {
+    padding: 10px 24px;
+    border: 1px solid var(--black);
+    border-radius: 0;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-prev { background: var(--white); color: var(--black); }
+  .btn-next { background: var(--black); color: var(--white); }
+  .btn-prev:hover { background: var(--gray-light); }
+  .btn-next:hover { background: #333; }
+
+  .judge-controls { display: flex; gap: 8px; justify-content: center; margin-top: 10px; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+  .btn-known {
+    flex: 1; max-width: 160px; padding: 12px; min-height: 52px; font-size: 1rem;
+    border: 1px solid var(--black); border-radius: 0;
+    background: var(--white); color: var(--black);
+    font-weight: bold; letter-spacing: 0.03em; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-unknown {
+    flex: 1; max-width: 160px; padding: 12px; min-height: 52px; font-size: 1rem;
+    border: 1px solid var(--red); border-radius: 0;
+    background: var(--white); color: var(--red);
+    font-weight: bold; letter-spacing: 0.03em; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-known:hover { background: var(--black); color: var(--white); }
+  .btn-unknown:hover { background: var(--red); color: var(--white); }
+
+  .card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .bookmark-btn {
+    background: none; border: none; font-size: 1.3rem; cursor: pointer;
+    opacity: 0.3; transition: all 0.15s; padding: 2px 6px;
+  }
+  .bookmark-btn.active { opacity: 1; }
+  .bookmark-btn:hover { opacity: 0.7; }
+
+  .flash-result {
+    background: var(--white); border: 1px solid var(--black); padding: 32px 20px; text-align: center;
+  }
+  .flash-result-score { font-size: 2.5rem; font-weight: bold; color: var(--black); margin: 10px 0; }
+  .flash-result-bar { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+  .fr-known { background: var(--white); color: var(--black); border: 1px solid var(--black); padding: 8px 20px; font-weight: bold; font-size: 0.85rem; }
+  .fr-unknown { background: var(--white); color: var(--red); border: 1px solid var(--red); padding: 8px 20px; font-weight: bold; font-size: 0.85rem; }
+  .flash-result-msg { color: var(--gray-dark); margin: 8px 0 20px; font-size: 0.9rem; }
+  .btn-retry-flash {
+    padding: 12px 28px; border: 1px solid var(--black); border-radius: 0;
+    background: var(--black); color: var(--white); font-size: 0.9rem; font-weight: bold;
+    cursor: pointer; margin: 4px; letter-spacing: 0.05em;
+  }
+  .btn-review-flash {
+    padding: 12px 28px; border: 1px solid var(--red); border-radius: 0;
+    background: var(--red); color: var(--white); font-size: 0.9rem; font-weight: bold;
+    cursor: pointer; margin: 4px; letter-spacing: 0.05em;
+  }
+
+  .review-badge {
+    display: inline-block; background: var(--red); color: var(--white);
+    border-radius: 0; font-size: 0.7rem; font-weight: bold;
+    padding: 1px 6px; margin-left: 4px; vertical-align: middle;
+  }
+
+  .progress-bar-wrap { background: var(--gray-light); height: 3px; margin: 12px 0; }
+  .progress-bar { height: 100%; background: var(--black); transition: width 0.3s; }
+  .progress-text { text-align: center; font-size: 0.78rem; color: var(--gray-dark); margin-bottom: 4px; letter-spacing: 0.05em; }
+
+  /* クイズ */
+  .quiz-question {
+    background: var(--gray-light); border: 1px solid var(--black);
+    padding: 28px 20px; text-align: center; margin-bottom: 16px;
+  }
+  .quiz-chinese { font-size: 2.8rem; margin-bottom: 6px; color: var(--black); }
+  .quiz-romanize { font-size: 0.9rem; color: var(--gray-dark); }
+  .quiz-label { font-size: 0.75rem; color: var(--gray-dark); margin-bottom: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .option-btn {
+    padding: 16px 12px; min-height: 56px;
+    border: 1px solid var(--gray-mid); border-radius: 0;
+    background: var(--white); font-size: 0.95rem; font-weight: bold;
+    cursor: pointer; transition: all 0.15s; text-align: center; color: var(--black);
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--black); background: var(--gray-light); }
+  .option-btn.correct { background: var(--black); border-color: var(--black); color: var(--white); }
+  .option-btn.wrong { background: var(--white); border-color: var(--red); color: var(--red); }
+  .option-btn:disabled { cursor: default; }
+
+  .feedback {
+    text-align: center; padding: 12px; margin-bottom: 16px;
+    font-weight: bold; font-size: 0.9rem; letter-spacing: 0.05em; border: 1px solid;
+  }
+  .feedback.correct { background: var(--black); color: var(--white); border-color: var(--black); }
+  .feedback.wrong { background: var(--white); color: var(--red); border-color: var(--red); }
+
+  .quiz-score {
+    display: flex; justify-content: space-around;
+    background: var(--gray-light); border: 1px solid var(--gray-mid);
+    padding: 16px; margin-bottom: 16px;
+  }
+  .score-item { text-align: center; }
+  .score-num { font-size: 1.6rem; font-weight: bold; color: var(--black); }
+  .score-label { font-size: 0.72rem; color: var(--gray-dark); letter-spacing: 0.08em; margin-top: 2px; }
+
+  .btn-start, .btn-next-q {
+    display: block; width: 100%; padding: 15px; border: none; border-radius: 0;
+    background: var(--black); color: var(--white); font-size: 0.9rem; font-weight: bold;
+    letter-spacing: 0.1em; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-start:hover, .btn-next-q:hover { background: #333; }
+
+  .result-box { background: var(--white); border: 1px solid var(--black); padding: 36px 20px; text-align: center; }
+  .result-emoji { font-size: 2.5rem; margin-bottom: 12px; }
+  .result-title { font-size: 1rem; font-weight: bold; letter-spacing: 0.1em; margin-bottom: 8px; color: var(--gray-dark); }
+  .result-score { font-size: 2.8rem; font-weight: bold; color: var(--black); margin: 12px 0; }
+  .result-msg { color: var(--gray-dark); margin-bottom: 24px; font-size: 0.9rem; }
+  .btn-retry {
+    padding: 13px 36px; border: 1px solid var(--black); border-radius: 0;
+    background: var(--black); color: var(--white); font-size: 0.9rem; font-weight: bold;
+    letter-spacing: 0.1em; cursor: pointer;
+  }
+  .btn-retry:hover { background: #333; }
+
+  section h2 {
+    font-size: 0.75rem; font-weight: bold; letter-spacing: 0.12em;
+    color: var(--gray-dark); margin-bottom: 10px; text-transform: uppercase;
+  }
+
+  /* タイマーチップ */
+  .timer-chip {
+    margin-left: auto; font-size: 0.85rem; font-weight: bold;
+    letter-spacing: 0.05em; opacity: 0.85;
+    background: rgba(255,255,255,0.2); padding: 3px 10px;
+  }
+
+  /* ホーム画面 */
+  .home-stat-block { border: 1px solid var(--gray-mid); padding: 16px; margin-bottom: 12px; background: var(--white); }
+  .home-stat-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .home-stat-label { font-size: 0.75rem; font-weight: bold; letter-spacing: 0.1em; color: var(--gray-dark); text-transform: uppercase; flex: 1; }
+  .home-stat-value { font-size: 1.6rem; font-weight: bold; color: var(--black); }
+  .home-goal-label { font-size: 0.75rem; color: var(--gray-dark); }
+  .home-time-display { font-size: 2rem; font-weight: bold; color: var(--black); margin: 6px 0 4px; }
+  .home-streak-display { font-size: 2rem; font-weight: bold; color: var(--red); }
+  .goal-btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .goal-btn {
+    padding: 12px 4px; border: 1px solid var(--gray-mid); background: var(--white);
+    font-size: 0.9rem; font-weight: bold; cursor: pointer; transition: all 0.15s; color: var(--black);
+  }
+  .goal-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
+  .goal-btn:hover:not(.selected) { border-color: var(--black); }
+  .home-learned-nums { font-size: 1rem; font-weight: bold; }
+  .goal-achieved {
+    display: inline-block; background: var(--red); color: var(--white);
+    font-size: 0.75rem; font-weight: bold; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
+  }
+
+  /* フレーズ画面 */
+  .phrase-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .phrase-cat-btn {
+    padding: 8px 14px; border: 1px solid var(--gray-mid);
+    background: var(--white); font-size: 0.82rem; font-weight: bold;
+    cursor: pointer; color: var(--black); transition: all 0.15s;
+  }
+  .phrase-cat-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
+  .phrase-cat-btn.emergency { border-color: var(--red); color: var(--red); }
+  .phrase-cat-btn.emergency.selected { background: var(--red); color: var(--white); }
+  .phrase-item {
+    padding: 14px 16px; border-bottom: 1px solid var(--gray-light);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .phrase-item:first-child { border-top: 1px solid var(--gray-light); }
+  .phrase-item.emergency-item { background: #fff5f5; }
+  .phrase-jp { font-size: 0.85rem; font-weight: bold; color: var(--black); margin-bottom: 3px; }
+  .phrase-chinese { font-size: 1.3rem; color: var(--black); margin-bottom: 2px; }
+  .phrase-kana { font-size: 0.75rem; color: var(--red); }
+  .phrase-texts { flex: 1; }
+  .sos-banner {
+    background: var(--red); color: var(--white);
+    padding: 12px 16px; text-align: center;
+    font-weight: bold; font-size: 0.9rem; letter-spacing: 0.1em; margin-bottom: 12px;
+  }
+
+  /* 練習画面 */
+  .practice-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .practice-card-btn {
+    border: 1px solid var(--black); padding: 20px 10px;
+    background: var(--white); cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .practice-card-btn:hover { background: var(--gray-light); }
+  .practice-card-btn .p-icon { font-size: 2rem; margin-bottom: 6px; }
+  .practice-card-btn .p-title { font-size: 0.85rem; font-weight: bold; }
+  .practice-card-btn .p-desc { font-size: 0.72rem; color: var(--gray-dark); margin-top: 4px; }
+  .btn-back-practice {
+    background: none; border: 1px solid var(--gray-mid);
+    padding: 8px 16px; font-size: 0.82rem; font-weight: bold;
+    cursor: pointer; margin-bottom: 16px; color: var(--black);
+  }
+
+  /* 部首一覧 */
+  .char-display {
+    background: var(--gray-light); border: 1px solid var(--black);
+    text-align: center; padding: 24px; margin-bottom: 16px;
+  }
+  .char-big { font-size: 5rem; color: var(--black); line-height: 1; }
+  .char-name { font-size: 0.85rem; color: var(--gray-dark); margin-top: 8px; }
+
+  /* 声調 */
+  .tone-card { border: 1px solid var(--gray-mid); padding: 16px; margin-bottom: 10px; }
+  .tone-name { font-size: 1rem; font-weight: bold; margin-bottom: 6px; }
+  .tone-mark { font-size: 1.5rem; color: var(--red); font-weight: bold; }
+  .tone-example-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .tone-chinese { font-size: 2rem; }
+  .tone-desc { font-size: 0.8rem; color: var(--gray-dark); }
+
+  /* 数字クイズ */
+  .number-display {
+    background: var(--gray-light); border: 1px solid var(--black);
+    text-align: center; padding: 32px; margin-bottom: 16px;
+  }
+  .number-big { font-size: 3.5rem; font-weight: bold; color: var(--black); }
+  .number-unit { font-size: 1rem; color: var(--gray-dark); margin-top: 4px; }
+
+  /* 復習リスト */
+  .review-list-empty { text-align: center; padding: 48px 20px; color: var(--gray-dark); font-size: 0.9rem; }
+  .review-word-item {
+    display: flex; align-items: center; padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-light); gap: 12px;
+  }
+  .review-word-item:first-child { border-top: 1px solid var(--gray-light); }
+  .review-word-chinese { font-size: 1.4rem; min-width: 80px; }
+  .review-word-info { flex: 1; }
+  .review-word-meaning { font-size: 0.9rem; font-weight: bold; }
+  .review-word-kana { font-size: 0.75rem; color: var(--red); }
+  .review-word-cat { font-size: 0.7rem; color: var(--gray-dark); margin-top: 2px; }
+  .btn-remove-bookmark {
+    background: none; border: 1px solid var(--gray-mid);
+    padding: 6px 10px; font-size: 0.75rem; cursor: pointer;
+    color: var(--gray-dark); white-space: nowrap;
+  }
+  .btn-remove-bookmark:hover { border-color: var(--red); color: var(--red); }
+  .review-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .btn-review-start {
+    flex: 1; padding: 13px; border: none;
+    background: var(--black); color: var(--white);
+    font-size: 0.9rem; font-weight: bold; cursor: pointer; letter-spacing: 0.05em;
+  }
+  .btn-review-clear {
+    padding: 13px 20px; border: 1px solid var(--red);
+    background: var(--white); color: var(--red);
+    font-size: 0.9rem; font-weight: bold; cursor: pointer;
+  }
+  .review-count-line { font-size: 0.8rem; color: var(--gray-dark); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- パスワード画面 -->
+<div id="pw-screen" style="position:fixed;inset:0;background:var(--white);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:360px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:8px">🇹🇼</div>
+    <div style="font-size:1.1rem;font-weight:bold;letter-spacing:0.1em;margin-bottom:4px">台湾語学習アプリ</div>
+    <div style="font-size:0.8rem;color:var(--gray-dark);margin-bottom:32px;letter-spacing:0.05em">TAIWAN STUDY APP</div>
+    <input id="pw-input" type="password" placeholder="パスワードを入力"
+      style="width:100%;padding:14px;border:1px solid var(--black);font-size:1rem;outline:none;margin-bottom:10px;letter-spacing:0.1em;"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <div id="pw-error" style="color:var(--red);font-size:0.82rem;margin-bottom:10px;display:none">パスワードが違います。管理者にお問い合わせください。</div>
+    <button onclick="checkPw()"
+      style="width:100%;padding:14px;background:var(--black);color:var(--white);border:none;font-size:0.9rem;font-weight:bold;letter-spacing:0.1em;cursor:pointer;">
+      ENTER
+    </button>
+  </div>
+</div>
+
+<header>
+  <span>🇹🇼</span>
+  <h1>台湾語学習アプリ</h1>
+  <div class="timer-chip" id="timer-chip">⏱ 0:00</div>
+</header>
+
+<nav>
+  <button onclick="showScreen('home')">🏠 ホーム</button>
+  <button class="active" onclick="showScreen('flash')">📇 カード</button>
+  <button onclick="showScreen('quiz')">📝 クイズ</button>
+  <button onclick="showScreen('phrase')">🗣 フレーズ</button>
+  <button onclick="showScreen('practice')">🎮 練習</button>
+  <button onclick="showScreen('review')">📌 復習<span id="nav-review-badge" class="review-badge" style="display:none"></span></button>
+</nav>
+
+<!-- HOME SCREEN -->
+<div id="home" class="screen">
+  <section><h2>今日の学習</h2></section>
+
+  <div class="home-stat-block">
+    <div class="home-stat-row">
+      <span class="home-stat-label">⏱ 学習時間</span>
+      <span class="home-goal-label" id="home-goal">目標 10分</span>
+    </div>
+    <div class="home-time-display" id="home-timer">0分0秒 <span id="home-goal-achieved"></span></div>
+    <div class="progress-bar-wrap" style="margin:8px 0 4px">
+      <div class="progress-bar" id="home-time-bar" style="width:0%;background:var(--red)"></div>
+    </div>
+    <div style="text-align:right;font-size:0.75rem;color:var(--gray-dark)"><span id="home-time-pct">0</span>%</div>
+  </div>
+
+  <div class="home-stat-block">
+    <div class="home-stat-row">
+      <span class="home-stat-label">🔥 連続学習</span>
+    </div>
+    <div class="home-streak-display"><span id="home-streak">0</span>日</div>
+  </div>
+
+  <div class="home-stat-block">
+    <div class="home-stat-row">
+      <span class="home-stat-label">📚 覚えた単語</span>
+      <span class="home-learned-nums"><span id="home-learned">0</span> / <span id="home-total">0</span>語</span>
+    </div>
+    <div class="progress-bar-wrap" style="margin:8px 0 4px">
+      <div class="progress-bar" id="home-learned-bar" style="width:0%"></div>
+    </div>
+    <div style="text-align:right;font-size:0.75rem;color:var(--gray-dark)"><span id="home-learned-pct">0</span>%</div>
+  </div>
+
+  <div class="home-stat-block">
+    <div class="home-stat-label" style="margin-bottom:12px">🎯 1日の目標時間</div>
+    <div class="goal-btn-group">
+      <button id="goal-btn-5"  class="goal-btn" onclick="setDailyGoal(5)">5分</button>
+      <button id="goal-btn-10" class="goal-btn" onclick="setDailyGoal(10)">10分</button>
+      <button id="goal-btn-15" class="goal-btn" onclick="setDailyGoal(15)">15分</button>
+      <button id="goal-btn-30" class="goal-btn" onclick="setDailyGoal(30)">30分</button>
+    </div>
+  </div>
+
+  <button class="btn-start" onclick="goStudy()" style="margin-top:4px">📇 学習を始める →</button>
+
+  <div style="margin-top:24px;border-top:1px solid var(--gray-mid);padding-top:16px">
+    <button onclick="confirmReset()"
+      style="width:100%;padding:13px;border:1px solid var(--gray-mid);background:var(--white);color:var(--gray-dark);font-size:0.85rem;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
+      🔄 学習データをリセット
+    </button>
+  </div>
+</div>
+
+<!-- FLASHCARD SCREEN -->
+<div id="flash" class="screen active">
+  <section>
+    <h2>カテゴリを選ぶ</h2>
+    <div class="category-grid" id="flash-cats"></div>
+  </section>
+
+  <div class="card-meta">
+    <div class="progress-text" id="flash-progress"></div>
+    <button class="bookmark-btn" id="bookmark-btn" onclick="toggleBookmark()" title="復習リストに追加">🔖</button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="flash-bar"></div></div>
+
+  <div class="card-container">
+    <div class="card" id="flash-card" onclick="flipCard()">
+      <div class="card-front">
+        <div class="chinese-text" id="card-chinese"></div>
+        <div class="katakana" id="card-kana"></div>
+        <div class="romanize" id="card-roman"></div>
+        <button class="speak-btn" id="flash-speak-btn" onclick="event.stopPropagation(); speakChinese(document.getElementById('card-chinese').textContent, 'flash-speak-btn')">🔊</button>
+        <div class="tap-hint">タップして日本語を見る</div>
+      </div>
+      <div class="card-back">
+        <div class="meaning" id="card-meaning"></div>
+        <div class="example-block" id="card-example-block" style="display:none">
+          <div class="example-label">例文</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <div class="example-chinese" id="card-example"></div>
+            <button class="speak-btn" id="ex-speak-btn" style="width:34px;height:34px;font-size:1rem;margin:0;" onclick="event.stopPropagation(); speakChinese(document.getElementById('card-example').textContent, 'ex-speak-btn')">🔊</button>
+          </div>
+          <div class="example-roman" id="card-example-roman"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="judge-controls" id="judge-controls" style="display:none">
+    <button class="btn-unknown" onclick="judgeCard(false)">✗ わからなかった</button>
+    <button class="btn-known" onclick="judgeCard(true)">✓ わかった</button>
+  </div>
+
+  <div class="card-controls">
+    <button class="btn-prev" onclick="prevCard()">◀ 前へ</button>
+    <button class="btn-next" onclick="nextCard()">次へ ▶</button>
+  </div>
+
+  <div id="flash-result" style="display:none" class="flash-result">
+    <div style="font-size:2.5rem" id="fr-emoji"></div>
+    <div style="font-size:1.1rem;font-weight:bold;margin-top:8px">セッション終了！</div>
+    <div class="flash-result-score" id="fr-score"></div>
+    <div class="flash-result-bar">
+      <div class="fr-known" id="fr-known-count"></div>
+      <div class="fr-unknown" id="fr-unknown-count"></div>
+    </div>
+    <div class="flash-result-msg" id="fr-msg"></div>
+    <div>
+      <button class="btn-retry-flash" onclick="retryFlash()">🔄 もう一度</button>
+      <button class="btn-review-flash" id="fr-review-btn" onclick="startReviewMode()" style="display:none">📌 要復習のみ練習</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="quiz" class="screen">
+  <section>
+    <h2>カテゴリを選ぶ</h2>
+    <div class="category-grid" id="quiz-cats"></div>
+  </section>
+
+  <div id="quiz-start-area">
+    <div class="quiz-score">
+      <div class="score-item"><div class="score-num" id="q-correct">0</div><div class="score-label">正解</div></div>
+      <div class="score-item"><div class="score-num" id="q-wrong">0</div><div class="score-label">不正解</div></div>
+      <div class="score-item"><div class="score-num" id="q-total">0</div><div class="score-label">問題数</div></div>
+    </div>
+    <button class="btn-start" onclick="startQuiz()">クイズを始める</button>
+  </div>
+
+  <div id="quiz-area" style="display:none">
+    <div class="progress-text" id="quiz-progress"></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="quiz-bar"></div></div>
+
+    <div class="quiz-question">
+      <div class="quiz-label">次の単語の意味は？</div>
+      <div class="quiz-chinese" id="q-chinese"></div>
+      <button class="speak-btn" id="quiz-speak-btn" onclick="speakChinese(document.getElementById('q-chinese').textContent, 'quiz-speak-btn')">🔊</button>
+      <div class="katakana" id="q-kana"></div>
+      <div class="quiz-romanize" id="q-roman"></div>
+    </div>
+
+    <div class="options-grid" id="q-options"></div>
+    <div class="feedback" id="q-feedback" style="display:none"></div>
+    <button class="btn-next-q" id="q-next-btn" style="display:none" onclick="nextQuestion()">次の問題へ</button>
+  </div>
+
+  <div id="quiz-result" style="display:none">
+    <div class="result-box">
+      <div class="result-emoji" id="res-emoji"></div>
+      <div class="result-title">クイズ終了！</div>
+      <div class="result-score" id="res-score"></div>
+      <div class="result-msg" id="res-msg"></div>
+      <button class="btn-retry" onclick="resetQuiz()">もう一度チャレンジ</button>
+    </div>
+  </div>
+</div>
+
+<!-- PHRASE SCREEN -->
+<div id="phrase" class="screen">
+  <div id="phrase-main">
+    <section><h2>場面別フレーズ</h2></section>
+    <div class="phrase-cats" id="phrase-cats"></div>
+    <div id="phrase-list"></div>
+  </div>
+</div>
+
+<!-- PRACTICE SCREEN -->
+<div id="practice" class="screen">
+  <!-- メニュー -->
+  <div id="practice-menu">
+    <section><h2>練習メニュー</h2></section>
+    <div class="practice-menu">
+      <button class="practice-card-btn" onclick="showPractice('chars')">
+        <div class="p-icon">🔤</div>
+        <div class="p-title">部首を覚えよう</div>
+        <div class="p-desc">基本部首15種類を学ぶ</div>
+      </button>
+      <button class="practice-card-btn" onclick="showPractice('tones')">
+        <div class="p-icon">🎵</div>
+        <div class="p-title">四声を覚えよう</div>
+        <div class="p-desc">四声+軽声の違いを学ぶ</div>
+      </button>
+      <button class="practice-card-btn" onclick="showPractice('numbers')">
+        <div class="p-icon">🔢</div>
+        <div class="p-title">数字・金額クイズ</div>
+        <div class="p-desc">台湾ドルの読み方を練習</div>
+      </button>
+      <button class="practice-card-btn" onclick="showPractice('charquiz')">
+        <div class="p-icon">❓</div>
+        <div class="p-title">部首クイズ</div>
+        <div class="p-desc">部首の意味を当てよう</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 部首一覧 -->
+  <div id="practice-chars" style="display:none">
+    <button class="btn-back-practice" onclick="showPractice('menu')">← メニューに戻る</button>
+    <section><h2>基本部首 15種類</h2></section>
+    <div id="chars-list"></div>
+  </div>
+
+  <!-- 四声説明 -->
+  <div id="practice-tones" style="display:none">
+    <button class="btn-back-practice" onclick="showPractice('menu')">← メニューに戻る</button>
+    <section><h2>中国語の四声（＋軽声）</h2></section>
+    <p style="font-size:0.82rem;color:var(--gray-dark);margin-bottom:12px">中国語は音の高低（声調）で意味が変わります。同じ「マ」でも4通りの意味があります！</p>
+    <div id="tones-list"></div>
+  </div>
+
+  <!-- 数字クイズ -->
+  <div id="practice-numbers" style="display:none">
+    <button class="btn-back-practice" onclick="showPractice('menu')">← メニューに戻る</button>
+    <section><h2>数字・金額クイズ</h2></section>
+    <div class="quiz-score">
+      <div class="score-item"><div class="score-num" id="nq-correct">0</div><div class="score-label">正解</div></div>
+      <div class="score-item"><div class="score-num" id="nq-wrong">0</div><div class="score-label">不正解</div></div>
+      <div class="score-item"><div class="score-num" id="nq-total">0</div><div class="score-label">問題数</div></div>
+    </div>
+    <div class="number-display">
+      <div class="number-big" id="nq-number">－</div>
+      <div class="number-unit" id="nq-unit">台湾ドル</div>
+    </div>
+    <div class="options-grid" id="nq-options"></div>
+    <div class="feedback" id="nq-feedback" style="display:none"></div>
+    <button class="btn-next-q" id="nq-next" style="display:none" onclick="nextNumberQ()">次の問題へ</button>
+  </div>
+
+  <!-- 部首クイズ -->
+  <div id="practice-charquiz" style="display:none">
+    <button class="btn-back-practice" onclick="showPractice('menu')">← メニューに戻る</button>
+    <section><h2>部首クイズ</h2></section>
+    <div class="quiz-score">
+      <div class="score-item"><div class="score-num" id="cq-correct">0</div><div class="score-label">正解</div></div>
+      <div class="score-item"><div class="score-num" id="cq-wrong">0</div><div class="score-label">不正解</div></div>
+    </div>
+    <div class="char-display">
+      <div class="char-big" id="cq-char">人</div>
+      <div class="char-name" id="cq-name"></div>
+    </div>
+    <div class="options-grid" id="cq-options"></div>
+    <div class="feedback" id="cq-feedback" style="display:none"></div>
+    <button class="btn-next-q" id="cq-next" style="display:none" onclick="nextCharQ()">次の問題へ</button>
+  </div>
+</div>
+
+<!-- REVIEW SCREEN -->
+<div id="review" class="screen">
+  <section><h2>復習リスト</h2></section>
+  <div class="review-count-line" id="review-count-line"></div>
+  <div class="review-actions">
+    <button class="btn-review-start" onclick="startFromReview()">📇 このリストでフラッシュカード練習</button>
+    <button class="btn-review-clear" onclick="clearAllBookmarks()">全削除</button>
+  </div>
+  <div id="review-list-body"></div>
+</div>
+
+<script>
+const WORDS = {
+  "あいさつ": [
+    { thai:"你好", kana:"ニーハオ", roman:"nǐ hǎo", meaning:"こんにちは", ex:"你好！很高興認識你。", exRoman:"ニーハオ！ヘン ガオシン レンシー ニー。（こんにちは！お会いできて嬉しいです）" },
+    { thai:"謝謝", kana:"シェシェ", roman:"xiè xiè", meaning:"ありがとう", ex:"謝謝你的幫忙。", exRoman:"シェシェ ニー ダ バンマン。（手伝ってくれてありがとう）" },
+    { thai:"對", kana:"ドゥイ", roman:"duì", meaning:"はい・そうです", ex:"對，就是這樣。", exRoman:"ドゥイ、ジゥ シー ジョーヤン。（はい、そのとおりです）" },
+    { thai:"不對", kana:"ブードゥイ", roman:"bú duì", meaning:"いいえ・違います", ex:"不對，不是這個。", exRoman:"ブードゥイ、ブーシー ジョーガ。（いいえ、これではありません）" },
+    { thai:"再見", kana:"ザイジェン", roman:"zài jiàn", meaning:"さようなら", ex:"再見！明天見。", exRoman:"ザイジェン！ミンティェン ジェン。（さようなら！また明日）" },
+    { thai:"對不起", kana:"ドゥイブチー", roman:"duì bu qǐ", meaning:"ごめんなさい", ex:"對不起，我遲到了。", exRoman:"ドゥイブチー、ウォー チードール。（遅れてごめんなさい）" },
+    { thai:"沒關係", kana:"メイグアンシ", roman:"méi guān xi", meaning:"大丈夫・気にしないで", ex:"沒關係，不用擔心。", exRoman:"メイグアンシ、ブーヨン ダンシン。（大丈夫、心配しないで）" },
+    { thai:"你好嗎", kana:"ニーハオマ", roman:"nǐ hǎo ma", meaning:"元気ですか？", ex:"你好嗎？最近怎麼樣？", exRoman:"ニーハオマ？ズイジン ゼンモーヤン？（元気ですか？最近どうですか？）" },
+    { thai:"很好", kana:"ヘンハオ", roman:"hěn hǎo", meaning:"元気です・とても良い", ex:"我很好，謝謝你問。", exRoman:"ウォー ヘンハオ、シェシェ ニー ウェン。（元気です、聞いてくれてありがとう）" },
+    { thai:"早安", kana:"ザオアン", roman:"zǎo ān", meaning:"おはようございます", ex:"早安！今天天氣不錯。", exRoman:"ザオアン！ジンティェン ティェンチー ブーツォー。（おはようございます！今日は良い天気ですね）" },
+    { thai:"晚安", kana:"ワンアン", roman:"wǎn ān", meaning:"おやすみなさい", ex:"晚安！好好休息。", exRoman:"ワンアン！ハオハオ シウシー。（おやすみなさい！ゆっくり休んでね）" },
+    { thai:"不好意思", kana:"ブーハオイース", roman:"bù hǎo yì si", meaning:"すみません（声かけ）", ex:"不好意思，請問廁所在哪裡？", exRoman:"ブーハオイース、チンウェン ツースオ ザイナーリー？（すみません、トイレはどこですか？）" },
+    { thai:"幸會", kana:"シンホイ", roman:"xìng huì", meaning:"はじめまして（お会いできて光栄）", ex:"幸會幸會，請多指教。", exRoman:"シンホイ シンホイ、チン ドゥオ ジージャオ。（はじめまして、よろしくお願いします）" },
+    { thai:"請多關照", kana:"チン ドゥオ グアンチャオ", roman:"qǐng duō guān zhào", meaning:"よろしくお願いします", ex:"以後請多關照。", exRoman:"イーホウ チン ドゥオ グアンチャオ。（これからよろしくお願いします）" },
+    { thai:"加油", kana:"ジャーヨウ", roman:"jiā yóu", meaning:"頑張って・ファイト", ex:"加油！你一定可以的。", exRoman:"ジャーヨウ！ニー イーディン クーイー ダ。（頑張って！きっとできるよ）" },
+  ],
+  "数字": [
+    { thai:"一", kana:"イー", roman:"yī", meaning:"1（いち）", ex:"請給我一個。", exRoman:"チン ゲイ ウォー イーガ。（一つください）" },
+    { thai:"二", kana:"アル", roman:"èr", meaning:"2（に）", ex:"我要兩杯咖啡。", exRoman:"ウォー ヤオ リャンベイ カーフェイ。（コーヒーを2杯ください）" },
+    { thai:"三", kana:"サン", roman:"sān", meaning:"3（さん）", ex:"我們有三個人。", exRoman:"ウォーメン ヨウ サンガ レン。（私たちは3人です）" },
+    { thai:"四", kana:"スー", roman:"sì", meaning:"4（し）", ex:"四點見面。", exRoman:"スーディェン ジェンミェン。（4時に会いましょう）" },
+    { thai:"五", kana:"ウー", roman:"wǔ", meaning:"5（ご）", ex:"再等五分鐘。", exRoman:"ザイ デン ウーフェンジョン。（あと5分待ってください）" },
+    { thai:"六", kana:"リウ", roman:"liù", meaning:"6（ろく）", ex:"六點下班。", exRoman:"リウディェン シャーバン。（6時に退勤します）" },
+    { thai:"七", kana:"チー", roman:"qī", meaning:"7（なな）", ex:"一週有七天。", exRoman:"イージョウ ヨウ チーティェン。（一週間は7日です）" },
+    { thai:"八", kana:"バー", roman:"bā", meaning:"8（はち）", ex:"八點上班。", exRoman:"バーディェン シャンバン。（8時に出勤します）" },
+    { thai:"九", kana:"ジウ", roman:"jiǔ", meaning:"9（きゅう）", ex:"九百元。", exRoman:"ジウバイユェン。（900元です）" },
+    { thai:"十", kana:"シー", roman:"shí", meaning:"10（じゅう）", ex:"十元一個。", exRoman:"シーユェン イーガ。（1個10元です）" },
+    { thai:"百", kana:"バイ", roman:"bǎi", meaning:"100（ひゃく）", ex:"一百元。", exRoman:"イーバイ ユェン。（100元です）" },
+    { thai:"千", kana:"チェン", roman:"qiān", meaning:"1000（せん）", ex:"一千元。", exRoman:"イーチェン ユェン。（1000元です）" },
+    { thai:"萬", kana:"ワン", roman:"wàn", meaning:"10000（いちまん）", ex:"一萬元一個月。", exRoman:"イーワン ユェン イーガ ユェ。（月1万元）" },
+    { thai:"零", kana:"リン", roman:"líng", meaning:"0（ぜろ）", ex:"零元，免費的。", exRoman:"リンユェン、ミェンフェイ ダ。（0元、無料です）" },
+    { thai:"半", kana:"バン", roman:"bàn", meaning:"半分（はんぶん）", ex:"半價優惠。", exRoman:"バンジャー ヨウホイ。（半額優待）" },
+    { thai:"第一", kana:"ディーイー", roman:"dì yī", meaning:"第1番・一番", ex:"這是第一次。", exRoman:"ジョー シー ディーイーツー。（これは初めてです）" },
+    { thai:"多少", kana:"ドゥオシャオ", roman:"duō shǎo", meaning:"いくつ・どのくらい", ex:"這個多少錢？", exRoman:"ジョーガ ドゥオシャオ チェン？（これはいくらですか？）" },
+    { thai:"幾個", kana:"ジーガ", roman:"jǐ gè", meaning:"いくつ（個数）", ex:"你要幾個？", exRoman:"ニー ヤオ ジーガ？（いくつ欲しいですか？）" },
+  ],
+  "食べ物・飲み物": [
+    { thai:"飯", kana:"ファン", roman:"fàn", meaning:"ご飯・食事", ex:"吃飯了嗎？", exRoman:"チーファン ラーマ？（ご飯食べましたか？）" },
+    { thai:"水", kana:"ショイ", roman:"shuǐ", meaning:"水", ex:"請給我一杯水。", exRoman:"チン ゲイ ウォー イーベイ ショイ。（お水を一杯ください）" },
+    { thai:"牛肉麵", kana:"ニウロウ ミェン", roman:"niú ròu miàn", meaning:"牛肉麺", ex:"這家牛肉麵很有名。", exRoman:"ジョーチャ ニウロウミェン ヘン ヨウミン。（この店の牛肉麺はとても有名です）" },
+    { thai:"滷肉飯", kana:"ルーロウ ファン", roman:"lǔ ròu fàn", meaning:"ルーロウファン（魯肉飯）", ex:"滷肉飯是台灣的靈魂食物。", exRoman:"ルーロウファン シー タイワン ダ リンフン シーウー。（ルーロウファンは台湾のソウルフード）" },
+    { thai:"小籠包", kana:"シャオロン バオ", roman:"xiǎo lóng bāo", meaning:"小籠包", ex:"鼎泰豐的小籠包很好吃。", exRoman:"ディンタイフォン ダ シャオロンバオ ヘン ハオチー。（鼎泰豐の小籠包がとても美味しい）" },
+    { thai:"珍珠奶茶", kana:"ジェンジュー ナイチャー", roman:"zhēn zhū nǎi chá", meaning:"タピオカミルクティー", ex:"我最喜歡喝珍珠奶茶。", exRoman:"ウォー ズイ シーホワン ヘー ジェンジューナイチャー。（タピオカミルクティーが一番好き）" },
+    { thai:"臭豆腐", kana:"チョウ ドウフ", roman:"chòu dòu fu", meaning:"臭豆腐", ex:"臭豆腐聞起來臭但吃起來香。", exRoman:"チョウドウフ ウェンチーライ チョウ ダン チーチーライ シャン。（臭豆腐は匂いはくさいが食べると美味しい）" },
+    { thai:"蚵仔煎", kana:"オアジェン", roman:"é zǐ jiān", meaning:"牡蠣オムレツ", ex:"夜市必吃蚵仔煎。", exRoman:"イェーシー ビーチー オアジェン。（夜市では蚵仔煎が必食です）" },
+    { thai:"鹹酥雞", kana:"シェンスー ジー", roman:"xián sū jī", meaning:"台湾式フライドチキン", ex:"鹹酥雞是夜市的定番。", exRoman:"シェンスージー シー イェーシー ダ ディンバン。（鹹酥雞は夜市の定番）" },
+    { thai:"好吃", kana:"ハオチー", roman:"hǎo chī", meaning:"美味しい", ex:"這個真的很好吃！", exRoman:"ジョーガ ジェンダ ヘン ハオチー！（これは本当に美味しい！）" },
+    { thai:"辣", kana:"ラー", roman:"là", meaning:"辛い", ex:"這個太辣了，我吃不了。", exRoman:"ジョーガ タイラー ラ、ウォー チーブーリャオ。（これは辛すぎて食べられない）" },
+    { thai:"甜", kana:"ティェン", roman:"tián", meaning:"甘い", ex:"這個甜點太甜了。", exRoman:"ジョーガ ティェンディェン タイティェン ラ。（このデザートは甘すぎる）" },
+    { thai:"咖啡", kana:"カーフェイ", roman:"kā fēi", meaning:"コーヒー", ex:"你要熱咖啡還是冰咖啡？", exRoman:"ニー ヤオ ロー カーフェイ ハイシー ビン カーフェイ？（ホットとアイスどちらにしますか？）" },
+    { thai:"茶", kana:"チャー", roman:"chá", meaning:"お茶", ex:"台灣的烏龍茶很有名。", exRoman:"タイワン ダ ウーロンチャー ヘン ヨウミン。（台湾のウーロン茶はとても有名）" },
+    { thai:"啤酒", kana:"ピージウ", roman:"pí jiǔ", meaning:"ビール", ex:"下班後喝一杯啤酒吧。", exRoman:"シャーバン ホウ ヘー イーベイ ピージウ バ。（退勤後にビールを一杯飲もう）" },
+    { thai:"豆漿", kana:"ドウジャン", roman:"dòu jiāng", meaning:"豆乳", ex:"早餐喝豆漿很健康。", exRoman:"ザオツァン ヘー ドウジャン ヘン ジェンカン。（朝食に豆乳を飲むのは健康的）" },
+    { thai:"水果", kana:"ショイグオ", roman:"shuǐ guǒ", meaning:"果物", ex:"台灣的水果又便宜又好吃。", exRoman:"タイワン ダ ショイグオ ヨウ ピェンイー ヨウ ハオチー。（台湾の果物は安くて美味しい）" },
+    { thai:"芒果", kana:"マングオ", roman:"máng guǒ", meaning:"マンゴー", ex:"台灣的芒果冰超好吃。", exRoman:"タイワン ダ マングオ ビン チャオ ハオチー。（台湾のマンゴーかき氷が最高）" },
+    { thai:"雞肉", kana:"ジーロウ", roman:"jī ròu", meaning:"鶏肉", ex:"雞肉飯是台南名物。", exRoman:"ジーロウファン シー タイナン ミンウー。（鶏肉飯は台南の名物）" },
+    { thai:"海鮮", kana:"ハイシェン", roman:"hǎi xiān", meaning:"海鮮", ex:"台灣的海鮮非常新鮮。", exRoman:"タイワン ダ ハイシェン フェイチャン シンシェン。（台湾の海鮮はとても新鮮）" },
+  ],
+  "基本フレーズ": [
+    { thai:"多少錢", kana:"ドゥオシャオ チェン", roman:"duō shǎo qián", meaning:"いくらですか？", ex:"這個多少錢？", exRoman:"ジョーガ ドゥオシャオチェン？（これはいくらですか？）" },
+    { thai:"在哪裡", kana:"ザイ ナーリー", roman:"zài nǎ lǐ", meaning:"どこですか？", ex:"廁所在哪裡？", exRoman:"ツースオ ザイ ナーリー？（トイレはどこですか？）" },
+    { thai:"什麼", kana:"ションモー", roman:"shén me", meaning:"何？", ex:"這是什麼？", exRoman:"ジョー シー ションモー？（これは何ですか？）" },
+    { thai:"誰", kana:"ショイ", roman:"shuí", meaning:"誰？", ex:"那個人是誰？", exRoman:"ナーガ レン シー ショイ？（あの人は誰ですか？）" },
+    { thai:"什麼時候", kana:"ションモー シーホウ", roman:"shén me shí hòu", meaning:"いつ？", ex:"你什麼時候要去？", exRoman:"ニー ションモーシーホウ ヤオ チュ？（あなたはいつ行きますか？）" },
+    { thai:"為什麼", kana:"ウェイションモー", roman:"wèi shén me", meaning:"なぜ？", ex:"為什麼遲到了？", exRoman:"ウェイションモー チードール？（なぜ遅刻したの？）" },
+    { thai:"可以", kana:"クーイー", roman:"kě yǐ", meaning:"できる・OK", ex:"可以幫我嗎？", exRoman:"クーイー バン ウォー マ？（手伝ってもらえますか？）" },
+    { thai:"不行", kana:"ブーシン", roman:"bù xíng", meaning:"できない・だめ", ex:"今天不行，明天可以嗎？", exRoman:"ジンティェン ブーシン、ミンティェン クーイー マ？（今日は無理、明日はどうですか？）" },
+    { thai:"不知道", kana:"ブージーダオ", roman:"bù zhī dào", meaning:"わかりません", ex:"不知道，請問別人。", exRoman:"ブージーダオ、チンウェン ビェレン。（わかりません、他の人に聞いてください）" },
+    { thai:"幫幫我", kana:"バンバン ウォー", roman:"bāng bang wǒ", meaning:"助けてください", ex:"幫幫我，我迷路了。", exRoman:"バンバン ウォー、ウォー ミールー ラ。（助けてください、道に迷いました）" },
+    { thai:"我不會說中文", kana:"ウォー ブーホイ シュオ ジョンウェン", roman:"wǒ bú huì shuō zhōng wén", meaning:"中国語が話せません", ex:"對不起，我不會說中文。", exRoman:"ドゥイブチー、ウォー ブーホイ シュオ ジョンウェン。（すみません、中国語が話せません）" },
+    { thai:"請說慢一點", kana:"チン シュオ マン イーディェン", roman:"qǐng shuō màn yī diǎn", meaning:"ゆっくり話してください", ex:"請說慢一點，謝謝。", exRoman:"チン シュオ マン イーディェン、シェシェ。（ゆっくり話してください、ありがとう）" },
+    { thai:"請再說一遍", kana:"チン ザイ シュオ イーピェン", roman:"qǐng zài shuō yī biàn", meaning:"もう一度言ってください", ex:"對不起，請再說一遍。", exRoman:"ドゥイブチー、チン ザイ シュオ イーピェン。（すみません、もう一度言ってください）" },
+    { thai:"結帳", kana:"ジェジャン", roman:"jié zhàng", meaning:"お会計をお願いします", ex:"不好意思，可以結帳嗎？", exRoman:"ブーハオイース、クーイー ジェジャン マ？（すみません、お会計をお願いできますか？）" },
+    { thai:"菜單", kana:"ツァイダン", roman:"cài dān", meaning:"メニュー", ex:"請給我菜單。", exRoman:"チン ゲイ ウォー ツァイダン。（メニューをください）" },
+    { thai:"打折", kana:"ダーザー", roman:"dǎ zhé", meaning:"割引・値引き", ex:"可以打折嗎？", exRoman:"クーイー ダーザー マ？（割引できますか？）" },
+    { thai:"好的", kana:"ハオダ", roman:"hǎo de", meaning:"はい・わかりました", ex:"好的，沒問題。", exRoman:"ハオダ、メイウェンティー。（はい、問題ありません）" },
+    { thai:"我聽不懂", kana:"ウォー ティン ブードン", roman:"wǒ tīng bù dǒng", meaning:"聞いてもわかりません", ex:"對不起，我聽不懂。", exRoman:"ドゥイブチー、ウォー ティン ブードン。（すみません、聞いてもわかりません）" },
+  ],
+  "色・形容詞": [
+    { thai:"紅色", kana:"ホンスー", roman:"hóng sè", meaning:"赤", ex:"我喜歡紅色的衣服。", exRoman:"ウォー シーホワン ホンスー ダ イーフ。（赤い服が好き）" },
+    { thai:"綠色", kana:"リュースー", roman:"lǜ sè", meaning:"緑", ex:"台灣的山都是綠色的。", exRoman:"タイワン ダ シャン ドウ シー リュースー ダ。（台湾の山はどれも緑色です）" },
+    { thai:"藍色", kana:"ランスー", roman:"lán sè", meaning:"青", ex:"今天天空很藍。", exRoman:"ジンティェン ティェンコン ヘン ラン。（今日は空がとても青い）" },
+    { thai:"白色", kana:"バイスー", roman:"bái sè", meaning:"白", ex:"白色的衣服看起來很清爽。", exRoman:"バイスー ダ イーフ カンチーライ ヘン チンシュアン。（白い服は清潔感がある）" },
+    { thai:"黑色", kana:"ヘイスー", roman:"hēi sè", meaning:"黒", ex:"黑色的車看起來很高級。", exRoman:"ヘイスー ダ チョー カンチーライ ヘン ガオジー。（黒い車は高級感がある）" },
+    { thai:"黃色", kana:"ホァンスー", roman:"huáng sè", meaning:"黄色", ex:"香蕉是黃色的。", exRoman:"シャンジャオ シー ホァンスー ダ。（バナナは黄色い）" },
+    { thai:"粉紅色", kana:"フェンホンスー", roman:"fěn hóng sè", meaning:"ピンク", ex:"她最喜歡粉紅色。", exRoman:"ター ズイ シーホワン フェンホンスー。（彼女はピンクが一番好き）" },
+    { thai:"大", kana:"ダー", roman:"dà", meaning:"大きい", ex:"這個房間很大。", exRoman:"ジョーガ ファンジェン ヘン ダー。（この部屋はとても大きい）" },
+    { thai:"小", kana:"シャオ", roman:"xiǎo", meaning:"小さい", ex:"這個包包有點小。", exRoman:"ジョーガ バオバオ ヨウディェン シャオ。（このカバンは少し小さい）" },
+    { thai:"漂亮", kana:"ピャオリャン", roman:"piào liàng", meaning:"きれい・美しい", ex:"這裡的風景真漂亮。", exRoman:"ジョーリー ダ フォンジン ジェン ピャオリャン。（ここの景色は本当にきれい）" },
+    { thai:"好", kana:"ハオ", roman:"hǎo", meaning:"良い", ex:"這家餐廳很好。", exRoman:"ジョーチャ ツァンティン ヘン ハオ。（このレストランはとても良い）" },
+    { thai:"熱", kana:"ロー", roman:"rè", meaning:"暑い・熱い", ex:"台灣夏天很熱。", exRoman:"タイワン シャーティェン ヘン ロー。（台湾の夏はとても暑い）" },
+    { thai:"涼快", kana:"リャンクワイ", roman:"liáng kuai", meaning:"涼しい", ex:"冷氣開了很涼快。", exRoman:"レンチー カイラ ヘン リャンクワイ。（エアコンをつけたら涼しい）" },
+    { thai:"快", kana:"クワイ", roman:"kuài", meaning:"速い", ex:"捷運很快很方便。", exRoman:"ジェーユン ヘン クワイ ヘン ファンビェン。（MRTはとても速くて便利）" },
+    { thai:"慢", kana:"マン", roman:"màn", meaning:"遅い", ex:"塞車所以很慢。", exRoman:"サイチョー スオイー ヘン マン。（渋滞で遅い）" },
+    { thai:"便宜", kana:"ピェンイー", roman:"pián yí", meaning:"安い", ex:"這裡的東西很便宜。", exRoman:"ジョーリー ダ ドンシ ヘン ピェンイー。（ここのものはとても安い）" },
+    { thai:"貴", kana:"グイ", roman:"guì", meaning:"高い（値段）", ex:"這個太貴了，有便宜一點的嗎？", exRoman:"ジョーガ タイグイ ラ、ヨウ ピェンイー イーディェン ダ マ？（高すぎる、もっと安いのはありますか？）" },
+    { thai:"新", kana:"シン", roman:"xīn", meaning:"新しい", ex:"我買了新手機。", exRoman:"ウォー マイラ シン ショウジー。（新しいスマホを買いました）" },
+    { thai:"重", kana:"ジョン", roman:"zhòng", meaning:"重い", ex:"這個行李很重。", exRoman:"ジョーガ シンリー ヘン ジョン。（この荷物はとても重い）" },
+    { thai:"好吃", kana:"ハオチー", roman:"hǎo chī", meaning:"美味しい", ex:"台灣的食物都好吃！", exRoman:"タイワン ダ シーウー ドウ ハオチー！（台湾の食べ物はどれも美味しい！）" },
+  ],
+  "日常単語": [
+    { thai:"家", kana:"ジャー", roman:"jiā", meaning:"家", ex:"我的家在台北。", exRoman:"ウォー ダ ジャー ザイ タイベイ。（私の家は台北にあります）" },
+    { thai:"公司", kana:"ゴンスー", roman:"gōng sī", meaning:"会社", ex:"我在日商公司工作。", exRoman:"ウォー ザイ リーシャン ゴンスー ゴンズオ。（私は日系企業で働いています）" },
+    { thai:"捷運", kana:"ジェーユン", roman:"jié yùn", meaning:"MRT（台北の地下鉄）", ex:"搭捷運去台北車站。", exRoman:"ダ ジェーユン チュ タイベイ チョーザン。（MRTで台北駅に行く）" },
+    { thai:"計程車", kana:"ジーチョン チョー", roman:"jì chéng chē", meaning:"タクシー", ex:"叫計程車去機場。", exRoman:"ジャオ ジーチョンチョー チュ ジーチャン。（タクシーを呼んで空港に行く）" },
+    { thai:"錢", kana:"チェン", roman:"qián", meaning:"お金", ex:"我沒有錢了。", exRoman:"ウォー メイヨウ チェン ラ。（お金がありません）" },
+    { thai:"時間", kana:"シージェン", roman:"shí jiān", meaning:"時間", ex:"我沒有時間，很趕。", exRoman:"ウォー メイヨウ シージェン、ヘン ガン。（時間がない、急いでいます）" },
+    { thai:"今天", kana:"ジンティェン", roman:"jīn tiān", meaning:"今日", ex:"今天天氣很好。", exRoman:"ジンティェン ティェンチー ヘン ハオ。（今日は天気がとても良い）" },
+    { thai:"人", kana:"レン", roman:"rén", meaning:"人", ex:"台灣人很熱情。", exRoman:"タイワンレン ヘン ローチン。（台湾人はとても親切です）" },
+    { thai:"朋友", kana:"ポンヨウ", roman:"péng yǒu", meaning:"友達", ex:"我台灣朋友很多。", exRoman:"ウォー タイワン ポンヨウ ヘン ドゥオ。（台湾の友達がたくさんいます）" },
+    { thai:"家人", kana:"ジャーレン", roman:"jiā rén", meaning:"家族", ex:"我的家人在日本。", exRoman:"ウォー ダ ジャーレン ザイ リーベン。（私の家族は日本にいます）" },
+    { thai:"手機", kana:"ショウジー", roman:"shǒu jī", meaning:"スマートフォン", ex:"我的手機沒電了。", exRoman:"ウォー ダ ショウジー メイ ディェン ラ。（スマホの電池が切れました）" },
+    { thai:"醫院", kana:"イーユェン", roman:"yī yuàn", meaning:"病院", ex:"醫院在哪裡？", exRoman:"イーユェン ザイ ナーリー？（病院はどこですか？）" },
+    { thai:"銀行", kana:"インハン", roman:"yín háng", meaning:"銀行", ex:"銀行幾點開門？", exRoman:"インハン ジーディェン カイメン？（銀行は何時に開きますか？）" },
+    { thai:"便利商店", kana:"ピェンリー シャンディェン", roman:"biàn lì shāng diàn", meaning:"コンビニ", ex:"台灣的便利商店24小時都開。", exRoman:"タイワン ダ ピェンリーシャンディェン アルシースィアオシー ドウ カイ。（台湾のコンビニは24時間営業）" },
+    { thai:"夜市", kana:"イェーシー", roman:"yè shì", meaning:"夜市", ex:"台灣的夜市非常熱鬧。", exRoman:"タイワン ダ イェーシー フェイチャン ロウナオ。（台湾の夜市はとても賑やか）" },
+    { thai:"廁所", kana:"ツースオ", roman:"cè suǒ", meaning:"トイレ", ex:"廁所在哪裡？", exRoman:"ツースオ ザイ ナーリー？（トイレはどこですか？）" },
+    { thai:"飯店", kana:"ファンディェン", roman:"fàn diàn", meaning:"ホテル", ex:"這家飯店很舒適。", exRoman:"ジョーチャ ファンディェン ヘン シュシー。（このホテルはとても快適です）" },
+    { thai:"機場", kana:"ジーチャン", roman:"jī chǎng", meaning:"空港", ex:"桃園國際機場離台北有點遠。", exRoman:"タオユェン グオジー ジーチャン リー タイベイ ヨウディェン ユェン。（桃園国際空港は台北から少し遠い）" },
+    { thai:"市場", kana:"シーチャン", roman:"shì chǎng", meaning:"市場", ex:"傳統市場的東西很便宜。", exRoman:"チュアントン シーチャン ダ ドンシ ヘン ピェンイー。（伝統的な市場のものはとても安い）" },
+    { thai:"路", kana:"ルー", roman:"lù", meaning:"道・通り", ex:"這條路經常塞車。", exRoman:"ジョーティャオ ルー ジンチャン サイチョー。（この道はよく渋滞する）" },
+  ],
+  "動詞": [
+    { thai:"吃", kana:"チー", roman:"chī", meaning:"食べる", ex:"你吃飯了嗎？", exRoman:"ニー チーファン ラマ？（ご飯食べましたか？）" },
+    { thai:"喝", kana:"ヘー", roman:"hē", meaning:"飲む", ex:"多喝水對身體好。", exRoman:"ドゥオ ヘー ショイ ドゥイ シェンティー ハオ。（水をたくさん飲むと体に良い）" },
+    { thai:"去", kana:"チュ", roman:"qù", meaning:"行く", ex:"一起去夜市吧。", exRoman:"イーチー チュ イェーシー バ。（一緒に夜市に行こう）" },
+    { thai:"來", kana:"ライ", roman:"lái", meaning:"来る", ex:"你常來台灣嗎？", exRoman:"ニー チャン ライ タイワン マ？（よく台湾に来ますか？）" },
+    { thai:"睡覺", kana:"ショイジャオ", roman:"shuì jiào", meaning:"寝る", ex:"幾點睡覺？", exRoman:"ジーディェン ショイジャオ？（何時に寝ますか？）" },
+    { thai:"買", kana:"マイ", roman:"mǎi", meaning:"買う", ex:"我想買手伴禮。", exRoman:"ウォー シャン マイ ショウバンリー。（お土産を買いたい）" },
+    { thai:"賣", kana:"マイ", roman:"mài", meaning:"売る", ex:"這裡賣什麼？", exRoman:"ジョーリー マイ ションモー？（ここでは何を売っていますか？）" },
+    { thai:"說", kana:"シュオ", roman:"shuō", meaning:"話す", ex:"你會說日語嗎？", exRoman:"ニー ホイ シュオ リーユー マ？（日本語を話せますか？）" },
+    { thai:"聽", kana:"ティン", roman:"tīng", meaning:"聞く", ex:"我喜歡聽台灣音樂。", exRoman:"ウォー シーホワン ティン タイワン インユェ。（台湾の音楽を聴くのが好き）" },
+    { thai:"看", kana:"カン", roman:"kàn", meaning:"見る", ex:"我在看台劇。", exRoman:"ウォー ザイ カン タイジュー。（台湾ドラマを見ています）" },
+    { thai:"知道", kana:"ジーダオ", roman:"zhī dào", meaning:"知っている", ex:"你知道這家餐廳嗎？", exRoman:"ニー ジーダオ ジョーチャ ツァンティン マ？（このレストラン知っていますか？）" },
+    { thai:"喜歡", kana:"シーホワン", roman:"xǐ huān", meaning:"好き", ex:"我很喜歡台灣的食物。", exRoman:"ウォー ヘン シーホワン タイワン ダ シーウー。（台湾の食べ物がとても好き）" },
+    { thai:"想", kana:"シャン", roman:"xiǎng", meaning:"〜したい・思う", ex:"我想去九份。", exRoman:"ウォー シャン チュ ジウフェン。（九份に行きたい）" },
+    { thai:"需要", kana:"シュヤオ", roman:"xū yào", meaning:"必要とする", ex:"我需要幫忙。", exRoman:"ウォー シュヤオ バンマン。（助けが必要です）" },
+    { thai:"幫", kana:"バン", roman:"bāng", meaning:"助ける・手伝う", ex:"可以幫我嗎？", exRoman:"クーイー バン ウォー マ？（手伝ってもらえますか？）" },
+    { thai:"走", kana:"ゾウ", roman:"zǒu", meaning:"歩く・行く", ex:"走路去很近。", exRoman:"ゾウルー チュ ヘン ジン。（歩いて行けば近いです）" },
+    { thai:"搭", kana:"ダ", roman:"dā", meaning:"（乗り物に）乗る", ex:"搭捷運很方便。", exRoman:"ダ ジェーユン ヘン ファンビェン。（MRTに乗るのがとても便利）" },
+    { thai:"打電話", kana:"ダー ディェンホワ", roman:"dǎ diàn huà", meaning:"電話をかける", ex:"我打電話給你。", exRoman:"ウォー ダー ディェンホワ ゲイ ニー。（あなたに電話します）" },
+    { thai:"工作", kana:"ゴンズオ", roman:"gōng zuò", meaning:"働く・仕事する", ex:"你在哪裡工作？", exRoman:"ニー ザイ ナーリー ゴンズオ？（どこで働いていますか？）" },
+    { thai:"休息", kana:"シウシー", roman:"xiū xi", meaning:"休む", ex:"週末好好休息。", exRoman:"ジョウモウ ハオハオ シウシー。（週末はゆっくり休みます）" },
+  ],
+  "身体": [
+    { thai:"頭", kana:"トウ", roman:"tóu", meaning:"頭", ex:"我頭很痛。", exRoman:"ウォー トウ ヘン トン。（頭がとても痛い）" },
+    { thai:"臉", kana:"リェン", roman:"liǎn", meaning:"顔", ex:"洗臉了嗎？", exRoman:"シーリェン ラマ？（顔を洗いましたか？）" },
+    { thai:"眼睛", kana:"イェンジン", roman:"yǎn jīng", meaning:"目", ex:"眼睛很痠，需要休息。", exRoman:"イェンジン ヘン スアン、シュヤオ シウシー。（目が疲れた、休む必要があります）" },
+    { thai:"耳朵", kana:"アルドゥオ", roman:"ěr duǒ", meaning:"耳", ex:"耳朵在響。", exRoman:"アルドゥオ ザイ シャン。（耳鳴りがしています）" },
+    { thai:"鼻子", kana:"ビーズ", roman:"bí zi", meaning:"鼻", ex:"鼻子不通，很不舒服。", exRoman:"ビーズ ブートン、ヘン ブーシュフ。（鼻が詰まっていて不快です）" },
+    { thai:"嘴巴", kana:"ズイバ", roman:"zuǐ bā", meaning:"口", ex:"嘴巴很乾，想喝水。", exRoman:"ズイバ ヘン ガン、シャン ヘー ショイ。（口が乾いていて水が飲みたい）" },
+    { thai:"牙齒", kana:"ヤーチー", roman:"yá chǐ", meaning:"歯", ex:"牙齒很痛，要去看牙醫。", exRoman:"ヤーチー ヘン トン、ヤオ チュ カン ヤーイー。（歯がとても痛い、歯医者に行かないと）" },
+    { thai:"脖子", kana:"ボーズ", roman:"bó zi", meaning:"首", ex:"脖子很酸，需要按摩。", exRoman:"ボーズ ヘン スアン、シュヤオ アンモー。（首がこっていて、マッサージが必要です）" },
+    { thai:"肩膀", kana:"ジェンバン", roman:"jiān bǎng", meaning:"肩", ex:"肩膀很緊，壓力太大了。", exRoman:"ジェンバン ヘン ジン、ヤーリー タイダー ラ。（肩がこっていて、ストレスが大きすぎる）" },
+    { thai:"手", kana:"ショウ", roman:"shǒu", meaning:"手", ex:"飯前要洗手。", exRoman:"ファンチェン ヤオ シーショウ。（食事の前は手を洗ってください）" },
+    { thai:"手臂", kana:"ショウビー", roman:"shǒu bì", meaning:"腕", ex:"右手臂很痛。", exRoman:"ヨウショウビー ヘン トン。（右腕が痛い）" },
+    { thai:"胸部", kana:"ションブー", roman:"xiōng bù", meaning:"胸", ex:"胸部很痛，要去醫院。", exRoman:"ションブー ヘン トン、ヤオ チュ イーユェン。（胸が痛い、病院に行かないと）" },
+    { thai:"肚子", kana:"ドゥーズ", roman:"dù zi", meaning:"お腹", ex:"肚子餓了，要吃飯。", exRoman:"ドゥーズ オーラ、ヤオ チーファン。（お腹が空いた、ご飯を食べよう）" },
+    { thai:"背", kana:"ベイ", roman:"bèi", meaning:"背中", ex:"背很痛，坐太久了。", exRoman:"ベイ ヘン トン、ズオ タイジウ ラ。（腰が痛い、長時間座りすぎた）" },
+    { thai:"腳", kana:"ジャオ", roman:"jiǎo", meaning:"足", ex:"腳很痠，走太多路了。", exRoman:"ジャオ ヘン スアン、ゾウ タイドゥオ ルー ラ。（足がとても疲れた、歩きすぎた）" },
+    { thai:"痛", kana:"トン", roman:"tòng", meaning:"痛い", ex:"這裡很痛。", exRoman:"ジョーリー ヘン トン。（ここがとても痛い）" },
+    { thai:"不舒服", kana:"ブーシュフ", roman:"bù shū fu", meaning:"具合が悪い・不快", ex:"我身體不舒服。", exRoman:"ウォー シェンティー ブーシュフ。（体の調子が悪いです）" },
+    { thai:"頭髮", kana:"トウファ", roman:"tóu fa", meaning:"髪の毛", ex:"想去剪頭髮。", exRoman:"シャン チュ ジェン トウファ。（髪を切りに行きたい）" },
+  ],
+  "曜日・時間": [
+    { thai:"星期一", kana:"シンチーイー", roman:"xīng qī yī", meaning:"月曜日", ex:"星期一要開會。", exRoman:"シンチーイー ヤオ カイホイ。（月曜日に会議があります）" },
+    { thai:"星期二", kana:"シンチーアル", roman:"xīng qī èr", meaning:"火曜日", ex:"星期二有客戶拜訪。", exRoman:"シンチーアル ヨウ クーホウ バイファン。（火曜日にクライアントが来ます）" },
+    { thai:"星期三", kana:"シンチーサン", roman:"xīng qī sān", meaning:"水曜日", ex:"星期三一起去吃飯吧。", exRoman:"シンチーサン イーチー チュ チーファン バ。（水曜日一緒にご飯を食べましょう）" },
+    { thai:"星期四", kana:"シンチースー", roman:"xīng qī sì", meaning:"木曜日", ex:"星期四放假。", exRoman:"シンチースー ファンジャー。（木曜日は休みです）" },
+    { thai:"星期五", kana:"シンチーウー", roman:"xīng qī wǔ", meaning:"金曜日", ex:"星期五早點下班。", exRoman:"シンチーウー ザオディェン シャーバン。（金曜日は早く退勤します）" },
+    { thai:"星期六", kana:"シンチーリウ", roman:"xīng qī liù", meaning:"土曜日", ex:"星期六去夜市逛逛。", exRoman:"シンチーリウ チュ イェーシー グアングワン。（土曜日に夜市をぶらぶらします）" },
+    { thai:"星期日", kana:"シンチーリー", roman:"xīng qī rì", meaning:"日曜日", ex:"星期日在家休息。", exRoman:"シンチーリー ザイジャー シウシー。（日曜日は家で休みます）" },
+    { thai:"今天", kana:"ジンティェン", roman:"jīn tiān", meaning:"今日", ex:"今天天氣很好。", exRoman:"ジンティェン ティェンチー ヘン ハオ。（今日は天気が良い）" },
+    { thai:"明天", kana:"ミンティェン", roman:"míng tiān", meaning:"明日", ex:"明天見！", exRoman:"ミンティェン ジェン！（また明日！）" },
+    { thai:"昨天", kana:"ズオティェン", roman:"zuó tiān", meaning:"昨日", ex:"昨天去了夜市。", exRoman:"ズオティェン チュラ イェーシー。（昨日夜市に行きました）" },
+    { thai:"早上", kana:"ザオシャン", roman:"zǎo shàng", meaning:"朝", ex:"早上好！今天很早。", exRoman:"ザオシャン ハオ！ジンティェン ヘン ザオ。（おはよう！今日は早いね）" },
+    { thai:"中午", kana:"ジョンウー", roman:"zhōng wǔ", meaning:"昼", ex:"中午吃什麼？", exRoman:"ジョンウー チー ションモー？（昼は何を食べますか？）" },
+    { thai:"晚上", kana:"ワンシャン", roman:"wǎn shàng", meaning:"夜・夕方", ex:"晚上要去夜市嗎？", exRoman:"ワンシャン ヤオ チュ イェーシー マ？（夜に夜市に行きますか？）" },
+    { thai:"現在", kana:"シェンザイ", roman:"xiàn zài", meaning:"今・現在", ex:"現在幾點了？", exRoman:"シェンザイ ジーディェン ラ？（今何時ですか？）" },
+    { thai:"月", kana:"ユェ", roman:"yuè", meaning:"月（month）", ex:"我下個月要回日本。", exRoman:"ウォー シャーガ ユェ ヤオ ホイ リーベン。（来月日本に帰ります）" },
+    { thai:"年", kana:"ニェン", roman:"nián", meaning:"年", ex:"我在台灣住了三年了。", exRoman:"ウォー ザイ タイワン ジュラ サンニェン ラ。（台湾に3年住んでいます）" },
+    { thai:"小時", kana:"シャオシー", roman:"xiǎo shí", meaning:"時間（hour）", ex:"再等一個小時。", exRoman:"ザイ デン イーガ シャオシー。（あと1時間待ってください）" },
+    { thai:"分鐘", kana:"フェンジョン", roman:"fēn zhōng", meaning:"分（minute）", ex:"五分鐘後到。", exRoman:"ウーフェンジョン ホウ ダオ。（5分後に着きます）" },
+  ],
+  "旅行・交通": [
+    { thai:"機場", kana:"ジーチャン", roman:"jī chǎng", meaning:"空港", ex:"去機場要多久？", exRoman:"チュ ジーチャン ヤオ ドゥオジウ？（空港まで何分かかりますか？）" },
+    { thai:"飛機", kana:"フェイジー", roman:"fēi jī", meaning:"飛行機", ex:"飛機幾點起飛？", exRoman:"フェイジー ジーディェン チーフェイ？（飛行機は何時に出発しますか？）" },
+    { thai:"計程車", kana:"ジーチョン チョー", roman:"jì chéng chē", meaning:"タクシー", ex:"幫我叫計程車。", exRoman:"バン ウォー ジャオ ジーチョンチョー。（タクシーを呼んでください）" },
+    { thai:"公車", kana:"ゴンチョー", roman:"gōng chē", meaning:"バス", ex:"搭公車去士林夜市。", exRoman:"ダ ゴンチョー チュ シーリン イェーシー。（バスで士林夜市に行く）" },
+    { thai:"高鐵", kana:"ガオティエ", roman:"gāo tiě", meaning:"台湾新幹線（HSR）", ex:"搭高鐵去台南只要一個半小時。", exRoman:"ダ ガオティエ チュ タイナン ジーヤオ イーガ バン シャオシー。（新幹線で台南まで1時間半）" },
+    { thai:"火車", kana:"ホーチョー", roman:"huǒ chē", meaning:"電車・列車", ex:"搭火車環島很浪漫。", exRoman:"ダ ホーチョー ファンダオ ヘン ランマン。（電車で台湾一周はロマンチック）" },
+    { thai:"車票", kana:"チョーピャオ", roman:"chē piào", meaning:"チケット・切符", ex:"在哪裡買車票？", exRoman:"ザイ ナーリー マイ チョーピャオ？（どこでチケットを買いますか？）" },
+    { thai:"護照", kana:"フージャオ", roman:"hù zhào", meaning:"パスポート", ex:"護照快到期了。", exRoman:"フージャオ クワイ ダオチー ラ。（パスポートの期限が切れそう）" },
+    { thai:"飯店", kana:"ファンディェン", roman:"fàn diàn", meaning:"ホテル", ex:"這家飯店很舒服。", exRoman:"ジョーチャ ファンディェン ヘン シュフ。（このホテルはとても快適）" },
+    { thai:"地圖", kana:"ディートゥー", roman:"dì tú", meaning:"地図", ex:"請給我地圖。", exRoman:"チン ゲイ ウォー ディートゥー。（地図をください）" },
+    { thai:"直走", kana:"ジージョウ", roman:"zhí zǒu", meaning:"まっすぐ", ex:"直走然後右轉。", exRoman:"ジージョウ ランホウ ヨウジュアン。（まっすぐ行って右に曲がって）" },
+    { thai:"左轉", kana:"ズオジュアン", roman:"zuǒ zhuǎn", meaning:"左に曲がる", ex:"在路口左轉。", exRoman:"ザイ ルーコウ ズオジュアン。（交差点で左に曲がって）" },
+    { thai:"右轉", kana:"ヨウジュアン", roman:"yòu zhuǎn", meaning:"右に曲がる", ex:"右轉就到了。", exRoman:"ヨウジュアン ジウ ダオ ラ。（右に曲がればすぐ着きます）" },
+    { thai:"遠", kana:"ユェン", roman:"yuǎn", meaning:"遠い", ex:"很遠，需要搭車。", exRoman:"ヘン ユェン、シュヤオ ダ チョー。（遠いので車に乗る必要があります）" },
+    { thai:"近", kana:"ジン", roman:"jìn", meaning:"近い", ex:"很近，走路就可以了。", exRoman:"ヘン ジン、ゾウルー ジウ クーイー ラ。（近いので歩けます）" },
+    { thai:"九份", kana:"ジウフェン", roman:"jiǔ fèn", meaning:"九份（観光地）", ex:"九份的夜景很美。", exRoman:"ジウフェン ダ イェージン ヘン メイ。（九份の夜景はとても美しい）" },
+    { thai:"日月潭", kana:"リーユェ タン", roman:"rì yuè tán", meaning:"日月潭（観光地）", ex:"日月潭風景很漂亮。", exRoman:"リーユェタン フォンジン ヘン ピャオリャン。（日月潭の風景はとても美しい）" },
+    { thai:"墾丁", kana:"ケンディン", roman:"kěn dīng", meaning:"墾丁（観光地）", ex:"墾丁的海很漂亮。", exRoman:"ケンディン ダ ハイ ヘン ピャオリャン。（墾丁の海はとても美しい）" },
+  ],
+  "ショッピング": [
+    { thai:"多少錢", kana:"ドゥオシャオ チェン", roman:"duō shǎo qián", meaning:"いくらですか？", ex:"這個多少錢？便宜嗎？", exRoman:"ジョーガ ドゥオシャオチェン？ピェンイー マ？（これはいくら？安いですか？）" },
+    { thai:"便宜", kana:"ピェンイー", roman:"pián yí", meaning:"安い", ex:"這裡的東西很便宜。", exRoman:"ジョーリー ダ ドンシ ヘン ピェンイー。（ここのものはとても安い）" },
+    { thai:"貴", kana:"グイ", roman:"guì", meaning:"高い（値段）", ex:"太貴了，便宜一點可以嗎？", exRoman:"タイグイ ラ、ピェンイー イーディェン クーイー マ？（高すぎる、少し安くなりますか？）" },
+    { thai:"打折", kana:"ダーザー", roman:"dǎ zhé", meaning:"割引", ex:"現在有打折嗎？", exRoman:"シェンザイ ヨウ ダーザー マ？（今割引はありますか？）" },
+    { thai:"找錢", kana:"ジャオ チェン", roman:"zhǎo qián", meaning:"お釣り", ex:"找錢找錯了。", exRoman:"ジャオチェン ジャオ ツォーラ。（お釣りが間違っています）" },
+    { thai:"收據", kana:"ショウジュー", roman:"shōu jù", meaning:"レシート", ex:"請給我收據。", exRoman:"チン ゲイ ウォー ショウジュー。（レシートをください）" },
+    { thai:"袋子", kana:"ダイズ", roman:"dài zi", meaning:"袋", ex:"請給我袋子。", exRoman:"チン ゲイ ウォー ダイズ。（袋をください）" },
+    { thai:"顏色", kana:"ヤンスー", roman:"yán sè", meaning:"色", ex:"有其他顏色嗎？", exRoman:"ヨウ チーター ヤンスー マ？（他の色はありますか？）" },
+    { thai:"尺寸", kana:"チーツン", roman:"chǐ cùn", meaning:"サイズ", ex:"有大一點的尺寸嗎？", exRoman:"ヨウ ダー イーディェン ダ チーツン マ？（もう少し大きいサイズはありますか？）" },
+    { thai:"試穿", kana:"シーチュアン", roman:"shì chuān", meaning:"試着する", ex:"可以試穿嗎？", exRoman:"クーイー シーチュアン マ？（試着してもいいですか？）" },
+    { thai:"換貨", kana:"ホワンホー", roman:"huàn huò", meaning:"交換する", ex:"可以換貨嗎？這個壞了。", exRoman:"クーイー ホワンホー マ？ジョーガ ホアイラ。（交換できますか？これが壊れています）" },
+    { thai:"信用卡", kana:"シンヨン カー", roman:"xìn yòng kǎ", meaning:"クレジットカード", ex:"可以刷信用卡嗎？", exRoman:"クーイー シュア シンヨンカー マ？（クレジットカードは使えますか？）" },
+    { thai:"現金", kana:"シェンジン", roman:"xiàn jīn", meaning:"現金", ex:"我用現金付款。", exRoman:"ウォー ヨン シェンジン フーコワン。（現金で支払います）" },
+    { thai:"手伴禮", kana:"ショウバンリー", roman:"shǒu bàn lǐ", meaning:"お土産", ex:"我要買一些手伴禮。", exRoman:"ウォー ヤオ マイ イーシエ ショウバンリー。（お土産を少し買います）" },
+    { thai:"超市", kana:"チャオシー", roman:"chāo shì", meaning:"スーパーマーケット", ex:"超市的食材很新鮮。", exRoman:"チャオシー ダ シーツァイ ヘン シンシェン。（スーパーの食材はとても新鮮）" },
+  ],
+  "天気・季節": [
+    { thai:"天氣", kana:"ティェンチー", roman:"tiān qì", meaning:"天気", ex:"今天天氣怎麼樣？", exRoman:"ジンティェン ティェンチー ゼンモーヤン？（今日の天気はどうですか？）" },
+    { thai:"下雨", kana:"シャーユー", roman:"xià yǔ", meaning:"雨が降る", ex:"外面在下雨，帶傘了嗎？", exRoman:"ワイミェン ザイ シャーユー、ダイサン ラマ？（外は雨が降っている、傘持ってきた？）" },
+    { thai:"太陽", kana:"タイヤン", roman:"tài yáng", meaning:"太陽・日差し", ex:"太陽很大，記得塗防曬。", exRoman:"タイヤン ヘン ダー、ジーダ トゥ ファンシャイ。（日差しが強い、日焼け止めを塗って）" },
+    { thai:"晴天", kana:"チンティェン", roman:"qíng tiān", meaning:"晴れ", ex:"明天是晴天，適合出遊。", exRoman:"ミンティェン シー チンティェン、シーホー チュヨウ。（明日は晴れ、お出かけに最適）" },
+    { thai:"風", kana:"フォン", roman:"fēng", meaning:"風", ex:"颱風要來了，風很大。", exRoman:"タイフォン ヤオ ライラ、フォン ヘン ダー。（台風が来る、風が強い）" },
+    { thai:"雲", kana:"ユン", roman:"yún", meaning:"雲", ex:"今天雲很多，可能會下雨。", exRoman:"ジンティェン ユン ヘン ドゥオ、クーノン ホイ シャーユー。（今日は雲が多い、雨が降るかも）" },
+    { thai:"冷", kana:"レン", roman:"lěng", meaning:"寒い・冷たい", ex:"台灣冬天也會冷。", exRoman:"タイワン ドンティェン イェー ホイ レン。（台湾の冬も寒くなる）" },
+    { thai:"潮濕", kana:"チャオシー", roman:"cháo shī", meaning:"湿気が多い", ex:"台灣很潮濕，要注意發霉。", exRoman:"タイワン ヘン チャオシー、ヤオ ジューイー ファーメイ。（台湾は湿気が多い、カビに注意）" },
+    { thai:"打雷", kana:"ダーレイ", roman:"dǎ léi", meaning:"雷", ex:"昨晚打雷聲音很大。", exRoman:"ズオワン ダーレイ シェンイン ヘン ダー。（昨晩の雷がとても大きかった）" },
+    { thai:"颱風", kana:"タイフォン", roman:"tái fēng", meaning:"台風", ex:"颱風來了要待在家裡。", exRoman:"タイフォン ライラ ヤオ ダイザイ ジャーリー。（台風が来たら家にいよう）" },
+    { thai:"春天", kana:"チュンティェン", roman:"chūn tiān", meaning:"春", ex:"春天台灣花很多。", exRoman:"チュンティェン タイワン ホワ ヘン ドゥオ。（春の台湾は花が多い）" },
+    { thai:"夏天", kana:"シャーティェン", roman:"xià tiān", meaning:"夏", ex:"台灣夏天又熱又濕。", exRoman:"タイワン シャーティェン ヨウロー ヨウシー。（台湾の夏は暑くて湿気が多い）" },
+    { thai:"冬天", kana:"ドンティェン", roman:"dōng tiān", meaning:"冬", ex:"台灣冬天不會下雪。", exRoman:"タイワン ドンティェン ブーホイ シャーシュエ。（台湾の冬は雪が降らない）" },
+    { thai:"梅雨季", kana:"メイユー ジー", roman:"méi yǔ jì", meaning:"梅雨の季節", ex:"梅雨季很常下雨。", exRoman:"メイユージー ヘン チャン シャーユー。（梅雨の季節はよく雨が降る）" },
+    { thai:"彩虹", kana:"ツァイホン", roman:"cǎi hóng", meaning:"虹", ex:"下雨後出現了彩虹，好漂亮。", exRoman:"シャーユー ホウ チューシェン ラ ツァイホン、ハオ ピャオリャン。（雨上がりに虹が出た、きれい）" },
+  ],
+  "気持ち・感情": [
+    { thai:"開心", kana:"カイシン", roman:"kāi xīn", meaning:"嬉しい・楽しい", ex:"今天很開心，謝謝大家。", exRoman:"ジンティェン ヘン カイシン、シェシェ ダーチャー。（今日はとても嬉しい、みんなありがとう）" },
+    { thai:"難過", kana:"ナングオ", roman:"nán guò", meaning:"悲しい・つらい", ex:"聽到這個消息很難過。", exRoman:"ティンダオ ジョーガ シャオシー ヘン ナングオ。（このニュースを聞いて悲しい）" },
+    { thai:"生氣", kana:"ションチー", roman:"shēng qì", meaning:"怒る", ex:"不要生氣，冷靜一下。", exRoman:"ブーヤオ ションチー、レンジン イーシャー。（怒らないで、落ち着いて）" },
+    { thai:"害怕", kana:"ハイパー", roman:"hài pà", meaning:"怖い・恐ろしい", ex:"我很害怕打針。", exRoman:"ウォー ヘン ハイパー ダー ジェン。（注射がとても怖い）" },
+    { thai:"興奮", kana:"シンフェン", roman:"xīng fèn", meaning:"興奮する・ワクワク", ex:"去台灣很興奮。", exRoman:"チュ タイワン ヘン シンフェン。（台湾に行くのがとてもワクワクする）" },
+    { thai:"無聊", kana:"ウーリャオ", roman:"wú liáo", meaning:"退屈・つまらない", ex:"等太久了，好無聊。", exRoman:"デン タイジウ ラ、ハオ ウーリャオ。（待ちすぎて退屈だ）" },
+    { thai:"累", kana:"レイ", roman:"lèi", meaning:"疲れた", ex:"今天工作很累。", exRoman:"ジンティェン ゴンズオ ヘン レイ。（今日は仕事でとても疲れた）" },
+    { thai:"餓", kana:"オー", roman:"è", meaning:"お腹が空いた", ex:"我好餓，去吃飯吧。", exRoman:"ウォー ハオオー、チュ チーファン バ。（お腹が空いた、ご飯を食べに行こう）" },
+    { thai:"飽", kana:"バオ", roman:"bǎo", meaning:"お腹がいっぱい", ex:"我吃飽了，謝謝招待。", exRoman:"ウォー チーバオ ラ、シェシェ ジャオダイ。（お腹がいっぱいです、もてなしてくれてありがとう）" },
+    { thai:"擔心", kana:"ダンシン", roman:"dān xīn", meaning:"心配する", ex:"不用擔心，會沒問題的。", exRoman:"ブーヨン ダンシン、ホイ メイウェンティー ダ。（心配しないで、大丈夫だよ）" },
+    { thai:"有興趣", kana:"ヨウ シンチュ", roman:"yǒu xìng qù", meaning:"興味がある", ex:"我對台灣文化很有興趣。", exRoman:"ウォー ドゥイ タイワン ウェンホワ ヘン ヨウシンチュ。（台湾文化にとても興味があります）" },
+    { thai:"驚訝", kana:"ジンヤー", roman:"jīng yà", meaning:"驚く", ex:"真的嗎！好驚訝。", exRoman:"ジェンダ マ！ハオ ジンヤー。（本当に！とても驚いた）" },
+    { thai:"緊張", kana:"ジンジャン", roman:"jǐn zhāng", meaning:"緊張する・ストレス", ex:"明天有大會議，很緊張。", exRoman:"ミンティェン ヨウ ダー ホイイー、ヘン ジンジャン。（明日大きな会議があって緊張している）" },
+    { thai:"幸福", kana:"シンフー", roman:"xìng fú", meaning:"幸せ", ex:"在台灣生活讓我感到幸福。", exRoman:"ザイ タイワン ションホー ラン ウォー ガンダオ シンフー。（台湾での生活は幸せを感じる）" },
+    { thai:"後悔", kana:"ホウホイ", roman:"hòu huǐ", meaning:"後悔する", ex:"沒來台灣就後悔了。", exRoman:"メイ ライ タイワン ジウ ホウホイ ラ。（台湾に来なかったら後悔していた）" },
+  ],
+  "病気・医療": [
+    { thai:"生病", kana:"ションビン", roman:"shēng bìng", meaning:"病気になる", ex:"我生病了，需要看醫生。", exRoman:"ウォー ションビン ラ、シュヤオ カン イーション。（病気になった、医者に診てもらう必要がある）" },
+    { thai:"發燒", kana:"ファーシャオ", roman:"fā shāo", meaning:"熱が出る", ex:"我發燒了，三十八度。", exRoman:"ウォー ファーシャオ ラ、サンシーバードゥー。（熱が出た、38度）" },
+    { thai:"頭痛", kana:"トウトン", roman:"tóu tòng", meaning:"頭痛", ex:"頭痛，需要止痛藥。", exRoman:"トウトン、シュヤオ ジートンヤオ。（頭痛がする、鎮痛剤が必要）" },
+    { thai:"咳嗽", kana:"クーソウ", roman:"ké sou", meaning:"咳をする", ex:"一直咳嗽，需要看醫生。", exRoman:"イージー クーソウ、シュヤオ カン イーション。（ずっと咳が出る、医者に行かないと）" },
+    { thai:"感冒", kana:"ガンマオ", roman:"gǎn mào", meaning:"風邪をひく", ex:"感冒了，鼻水一直流。", exRoman:"ガンマオ ラ、ビーショイ イージー リウ。（風邪をひいた、鼻水が止まらない）" },
+    { thai:"想吐", kana:"シャントゥー", roman:"xiǎng tù", meaning:"吐き気がする", ex:"吃壞肚子，一直想吐。", exRoman:"チーホアイ ドゥーズ、イージー シャントゥー。（食あたりで吐き気が続いている）" },
+    { thai:"拉肚子", kana:"ラードゥーズ", roman:"lā dù zi", meaning:"下痢をする", ex:"拉肚子，一直跑廁所。", exRoman:"ラードゥーズ、イージー パオ ツースオ。（下痢でトイレに走り続けている）" },
+    { thai:"醫生", kana:"イーション", roman:"yī shēng", meaning:"医師", ex:"我要看醫生。", exRoman:"ウォー ヤオ カン イーション。（医者に診てもらいたい）" },
+    { thai:"護士", kana:"フーシー", roman:"hù shi", meaning:"看護師", ex:"護士人很好。", exRoman:"フーシー レン ヘン ハオ。（看護師さんが親切）" },
+    { thai:"藥", kana:"ヤオ", roman:"yào", meaning:"薬", ex:"一天要吃三次藥。", exRoman:"イーティェン ヤオ チー サンツー ヤオ。（1日3回薬を飲みます）" },
+    { thai:"診所", kana:"ジェンスオ", roman:"zhěn suǒ", meaning:"クリニック・診療所", ex:"附近有診所嗎？", exRoman:"フージン ヨウ ジェンスオ マ？（近くにクリニックはありますか？）" },
+    { thai:"過敏", kana:"グオミン", roman:"guò mǐn", meaning:"アレルギー", ex:"我對花粉過敏。", exRoman:"ウォー ドゥイ ホワフェン グオミン。（花粉アレルギーがあります）" },
+    { thai:"急診", kana:"ジージェン", roman:"jí zhěn", meaning:"救急・緊急外来", ex:"很緊急，需要急診。", exRoman:"ヘン ジンジー、シュヤオ ジージェン。（緊急で救急が必要）" },
+    { thai:"健保", kana:"ジェンバオ", roman:"jiàn bǎo", meaning:"健康保険（台湾の全民健保）", ex:"台灣的健保很方便。", exRoman:"タイワン ダ ジェンバオ ヘン ファンビェン。（台湾の健康保険はとても便利）" },
+    { thai:"預約", kana:"ユーユエ", roman:"yù yuē", meaning:"予約する", ex:"我要預約看診。", exRoman:"ウォー ヤオ ユーユエ カンジェン。（診察の予約をしたい）" },
+  ],
+  "仕事・ビジネス": [
+    { thai:"工作", kana:"ゴンズオ", roman:"gōng zuò", meaning:"仕事・働く", ex:"你在哪裡工作？", exRoman:"ニー ザイ ナーリー ゴンズオ？（どこで働いていますか？）" },
+    { thai:"公司", kana:"ゴンスー", roman:"gōng sī", meaning:"会社", ex:"我在日商公司上班。", exRoman:"ウォー ザイ リーシャン ゴンスー シャンバン。（日系企業に勤めています）" },
+    { thai:"會議", kana:"ホイイー", roman:"huì yì", meaning:"会議・ミーティング", ex:"今天有重要的會議。", exRoman:"ジンティェン ヨウ ジョンヤオ ダ ホイイー。（今日は重要な会議があります）" },
+    { thai:"預約", kana:"ユーユエ", roman:"yù yuē", meaning:"アポイント・予約", ex:"我和客戶有個預約。", exRoman:"ウォー ホー クーホウ ヨウガ ユーユエ。（クライアントとのアポがあります）" },
+    { thai:"薪水", kana:"シンショイ", roman:"xīn shuǐ", meaning:"給料・月給", ex:"薪水月底發。", exRoman:"シンショイ ユェーディー ファー。（給料は月末に出ます）" },
+    { thai:"主管", kana:"ジュグアン", roman:"zhǔ guǎn", meaning:"上司・マネージャー", ex:"我的主管人很好。", exRoman:"ウォー ダ ジュグアン レン ヘン ハオ。（上司がとても良い人です）" },
+    { thai:"同事", kana:"トンシー", roman:"tóng shì", meaning:"同僚", ex:"同事們都很友善。", exRoman:"トンシーメン ドウ ヘン ヨウシャン。（同僚たちはみんなフレンドリー）" },
+    { thai:"請假", kana:"チンジャー", roman:"qǐng jià", meaning:"休暇を申請する", ex:"我要請三天假去旅行。", exRoman:"ウォー ヤオ チンジャー サンティェン チュ リューシン。（旅行で3日間休みを取ります）" },
+    { thai:"加班", kana:"ジャーバン", roman:"jiā bān", meaning:"残業する", ex:"最近一直加班，很累。", exRoman:"ズイジン イージー ジャーバン、ヘン レイ。（最近ずっと残業で疲れている）" },
+    { thai:"報告", kana:"バオガオ", roman:"bào gào", meaning:"報告書・レポート", ex:"報告要在中午前交。", exRoman:"バオガオ ヤオ ザイ ジョンウー チェン ジャオ。（レポートは正午前に提出）" },
+    { thai:"電子郵件", kana:"ディェンズ ヨウジェン", roman:"diàn zǐ yóu jiàn", meaning:"メール", ex:"請傳電子郵件給我。", exRoman:"チン チュアン ディェンズ ヨウジェン ゲイ ウォー。（メールを送ってください）" },
+    { thai:"視訊會議", kana:"シーシュン ホイイー", roman:"shì xùn huì yì", meaning:"オンライン会議", ex:"早上九點有視訊會議。", exRoman:"ザオシャン ジウディェン ヨウ シーシュン ホイイー。（朝9時にオンライン会議があります）" },
+    { thai:"下班", kana:"シャーバン", roman:"xià bān", meaning:"退勤する", ex:"今天幾點下班？", exRoman:"ジンティェン ジーディェン シャーバン？（今日は何時に退勤しますか？）" },
+    { thai:"出差", kana:"チューチャイ", roman:"chū chāi", meaning:"出張する", ex:"下週要去高雄出差。", exRoman:"シャージョウ ヤオ チュ ガオション チューチャイ。（来週高雄に出張します）" },
+    { thai:"業務", kana:"イェーウー", roman:"yè wù", meaning:"業務・ビジネス", ex:"台灣業務拓展很順利。", exRoman:"タイワン イェーウー トゥオジャン ヘン シュンリー。（台湾での業務展開は順調です）" },
+  ],
+};
+
+const CATEGORIES = Object.keys(WORDS);
+
+// ===== 部首データ =====
+const RADICALS = [
+  { char:"人", sound:"人へん（にんべん）", reading:"rén", example:"你", exMeaning:"あなた", desc:"人に関する漢字" },
+  { char:"口", sound:"口へん（くちへん）", reading:"kǒu", example:"吃", exMeaning:"食べる", desc:"口・言葉に関する漢字" },
+  { char:"水", sound:"さんずい", reading:"shuǐ", example:"喝", exMeaning:"飲む", desc:"水・液体に関する漢字" },
+  { char:"木", sound:"きへん", reading:"mù", example:"椅", exMeaning:"椅子", desc:"木・植物に関する漢字" },
+  { char:"火", sound:"火へん（ひへん）", reading:"huǒ", example:"炒", exMeaning:"炒める", desc:"火・熱に関する漢字" },
+  { char:"土", sound:"つちへん", reading:"tǔ", example:"地", exMeaning:"大地", desc:"土・地面に関する漢字" },
+  { char:"日", sound:"にちへん（ひへん）", reading:"rì", example:"明", exMeaning:"明るい", desc:"太陽・時間に関する漢字" },
+  { char:"月", sound:"つきへん", reading:"yuè", example:"期", exMeaning:"期間", desc:"月・体の部位に関する漢字" },
+  { char:"心", sound:"こころへん（りっしんべん）", reading:"xīn", example:"想", exMeaning:"思う", desc:"心・感情に関する漢字" },
+  { char:"手", sound:"てへん（扌）", reading:"shǒu", example:"打", exMeaning:"打つ", desc:"手の動作に関する漢字" },
+  { char:"言", sound:"ごんべん（訁）", reading:"yán", example:"說", exMeaning:"話す", desc:"言葉・発言に関する漢字" },
+  { char:"金", sound:"かねへん（釒）", reading:"jīn", example:"錢", exMeaning:"お金", desc:"金属・お金に関する漢字" },
+  { char:"女", sound:"おんなへん", reading:"nǚ", example:"她", exMeaning:"彼女", desc:"女性に関する漢字" },
+  { char:"食", sound:"しょくへん", reading:"shí", example:"飯", exMeaning:"ご飯", desc:"食べ物・食事に関する漢字" },
+  { char:"車", sound:"くるまへん", reading:"chē", example:"輛", exMeaning:"台（助数詞）", desc:"乗り物に関する漢字" },
+];
+
+// ===== 四声データ =====
+const TONES = [
+  { name:"第一声（陰平）", nameChinese:"陰平", mark:"ˉ（横棒）", markEx:"māo", desc:"高く平らに保ちながら発音。一定の高さを維持する。", example:"媽", kana:"マー（高く平らに）", meaning:"お母さん", tip:"高い音を一定に保つ。「まー」と棒読みする感じ" },
+  { name:"第二声（陽平）", nameChinese:"陽平", mark:"ˊ（右上がり）", markEx:"máo", desc:"低い音から高い音へ上昇させる。疑問符のように上がる。", example:"麻", kana:"マー↗（上昇）", meaning:"麻痺・麻", tip:"「え？」と聞き返すときの上がり調子" },
+  { name:"第三声（上声）", nameChinese:"上声", mark:"ˇ（V字形）", markEx:"mǎo", desc:"低い音からさらに下げてから上げる。V字型の声調。", example:"馬", kana:"マー↘↗（V字型）", meaning:"馬", tip:"「うーん」と考えるときのような低くてV字の声" },
+  { name:"第四声（去声）", nameChinese:"去声", mark:"ˋ（右下がり）", markEx:"mào", desc:"高い音から低い音へ急激に下降。強く短く発音。", example:"罵", kana:"マー↘（急降下）", meaning:"叱る・怒鳴る", tip:"「ダメ！」と強く叱るときのような急な下がり" },
+  { name:"軽声（中性音）", nameChinese:"輕聲", mark:"なし（軽く短く）", markEx:"ma", desc:"前の音節に付いて軽く短く発音。力を入れずに添える感じ。", example:"嗎", kana:"マ（軽く短く）", meaning:"〜ですか？（疑問詞）", tip:"「ね？」「よ」のような添え言葉。短く力を抜いて" },
+];
+
+// ===== 数字クイズデータ（台湾ドル：元）=====
+const NUMBER_QUIZ = [
+  { num:7,     display:"7",      unit:"",    answer:"七",      options:["七","八","六","九"] },
+  { num:15,    display:"15",     unit:"",    answer:"十五",    options:["十五","十二","二十","十九"] },
+  { num:20,    display:"20",     unit:"",    answer:"二十",    options:["二十","十","三十","四十"] },
+  { num:50,    display:"50",     unit:"元",  answer:"五十元",  options:["五十元","六十元","四十元","七十元"] },
+  { num:100,   display:"100",    unit:"元",  answer:"一百元",  options:["一百元","一千元","十元","兩百元"] },
+  { num:150,   display:"150",    unit:"元",  answer:"一百五十元", options:["一百五十元","一百一十元","兩百元","五十元"] },
+  { num:200,   display:"200",    unit:"元",  answer:"兩百元",  options:["兩百元","一百元","三百元","二十元"] },
+  { num:500,   display:"500",    unit:"元",  answer:"五百元",  options:["五百元","一百元","一千元","兩百五十元"] },
+  { num:1000,  display:"1,000",  unit:"元",  answer:"一千元",  options:["一千元","一百元","一萬元","兩千元"] },
+  { num:1500,  display:"1,500",  unit:"元",  answer:"一千五百元", options:["一千五百元","五百元","一千元","兩千元"] },
+  { num:2500,  display:"2,500",  unit:"元",  answer:"兩千五百元", options:["兩千五百元","一千元","五千元","兩千元"] },
+  { num:10000, display:"10,000", unit:"元",  answer:"一萬元",  options:["一萬元","一千元","十萬元","兩萬元"] },
+];
+
+// ===== フレーズデータ =====
+const PHRASES = {
+  "🆘 緊急": [
+    { jp:"助けてください！", chinese:"救命啊！", kana:"ジウミン アー！" },
+    { jp:"救急車を呼んでください", chinese:"請叫救護車", kana:"チン ジャオ ジウフーチョー" },
+    { jp:"警察を呼んでください", chinese:"請叫警察", kana:"チン ジャオ ジンチャー" },
+    { jp:"病院に連れて行ってください", chinese:"請帶我去醫院", kana:"チン ダイ ウォー チュ イーユェン" },
+    { jp:"けが人がいます", chinese:"有人受傷了", kana:"ヨウレン ショウシャン ラ" },
+    { jp:"火事！", chinese:"失火了！", kana:"シーホー ラ！" },
+    { jp:"泥棒！", chinese:"小偷！", kana:"シャオトウ！" },
+    { jp:"道に迷いました", chinese:"我迷路了", kana:"ウォー ミールー ラ" },
+    { jp:"パスポートをなくしました", chinese:"我的護照不見了", kana:"ウォー ダ フージャオ ブーシェン ラ" },
+    { jp:"〜アレルギーがあります", chinese:"我對⋯⋯過敏", kana:"ウォー ドゥイ……グオミン" },
+    { jp:"日本台湾交流協会に連絡してください", chinese:"請幫我聯絡日本台灣交流協會", kana:"チン バン ウォー リェンルオ リーベン タイワン ジャオリウ シェーホイ" },
+    { jp:"財布をすられました", chinese:"我的錢包被扒走了", kana:"ウォー ダ チェンバオ ベイ パーゾウ ラ" },
+    { jp:"緊急連絡先を教えてください", chinese:"請告訴我緊急聯絡方式", kana:"チン ガオスー ウォー ジンジー リェンルオ ファンシー" },
+  ],
+  "🚕 タクシー": [
+    { jp:"〜に行ってください", chinese:"請到⋯⋯", kana:"チン ダオ……" },
+    { jp:"メーターをつけてください", chinese:"請打錶", kana:"チン ダービャオ" },
+    { jp:"ここで止めてください", chinese:"請在這裡停車", kana:"チン ザイ ジョーリー ティンチョー" },
+    { jp:"急いでください", chinese:"請快一點", kana:"チン クワイ イーディェン" },
+    { jp:"いくらですか？", chinese:"多少錢？", kana:"ドゥオシャオチェン？" },
+    { jp:"お釣りは結構です", chinese:"不用找錢", kana:"ブーヨン ジャオチェン" },
+    { jp:"右に曲がってください", chinese:"請右轉", kana:"チン ヨウジュアン" },
+    { jp:"左に曲がってください", chinese:"請左轉", kana:"チン ズオジュアン" },
+    { jp:"まっすぐ行ってください", chinese:"請直走", kana:"チン ジージョウ" },
+    { jp:"渋滞を避けてください", chinese:"請繞開塞車的路", kana:"チン ラオカイ サイチョー ダ ルー" },
+    { jp:"この住所に行ってください", chinese:"請載我去這個地址", kana:"チン ザイ ウォー チュ ジョーガ ディージー" },
+    { jp:"領収書をください", chinese:"請給我收據", kana:"チン ゲイ ウォー ショウジュー" },
+  ],
+  "🏥 病院": [
+    { jp:"〜が痛いです", chinese:"我的⋯⋯很痛", kana:"ウォー ダ……ヘン トン" },
+    { jp:"熱があります（38度）", chinese:"我發燒了，三十八度", kana:"ウォー ファーシャオ ラ、サンシーバー ドゥー" },
+    { jp:"〜のアレルギーがあります", chinese:"我對⋯⋯過敏", kana:"ウォー ドゥイ……グオミン" },
+    { jp:"いつ薬を飲みますか？", chinese:"什麼時候吃藥？", kana:"ションモーシーホウ チーヤオ？" },
+    { jp:"入院が必要ですか？", chinese:"需要住院嗎？", kana:"シュヤオ ジューユェン マ？" },
+    { jp:"日本語を話せる医師はいますか？", chinese:"有會說日語的醫生嗎？", kana:"ヨウ ホイ シュオ リーユー ダ イーション マ？" },
+    { jp:"領収書をください（保険用）", chinese:"請給我收據（保險用）", kana:"チン ゲイ ウォー ショウジュー（バオシェン ヨン）" },
+    { jp:"健保は使えますか？", chinese:"可以用健保嗎？", kana:"クーイー ヨン ジェンバオ マ？" },
+    { jp:"処方箋をください", chinese:"請給我處方簽", kana:"チン ゲイ ウォー チューファンチェン" },
+    { jp:"どこの科に行けばいいですか？", chinese:"我應該掛哪一科？", kana:"ウォー インガイ グア ナーイーコー？" },
+    { jp:"3日前から症状があります", chinese:"三天前開始有症狀", kana:"サンティェン チェン カイシー ヨウ ジェンジュアン" },
+  ],
+  "🛒 夜市・市場": [
+    { jp:"これは何ですか？", chinese:"這個是什麼？", kana:"ジョーガ シー ションモー？" },
+    { jp:"試食できますか？", chinese:"可以試吃嗎？", kana:"クーイー シーチー マ？" },
+    { jp:"辛くしないでください", chinese:"請不要太辣", kana:"チン ブーヤオ タイラー" },
+    { jp:"パクチーなしでお願いします", chinese:"不要放香菜", kana:"ブーヤオ ファン シャンツァイ" },
+    { jp:"少し安くなりますか？", chinese:"可以便宜一點嗎？", kana:"クーイー ピェンイー イーディェン マ？" },
+    { jp:"2つください", chinese:"請給我兩個", kana:"チン ゲイ ウォー リャンガ" },
+    { jp:"袋に入れてください", chinese:"請幫我裝袋", kana:"チン バン ウォー ジュアンダイ" },
+    { jp:"新鮮ですか？", chinese:"新鮮嗎？", kana:"シンシェン マ？" },
+    { jp:"持ち帰りでお願いします", chinese:"請幫我打包", kana:"チン バン ウォー ダーバオ" },
+    { jp:"おすすめは何ですか？", chinese:"你推薦什麼？", kana:"ニー トゥイジェン ションモー？" },
+    { jp:"辛さを抑えてください", chinese:"請做不辣的", kana:"チン ズオ ブーラー ダ" },
+    { jp:"現金のみですか？", chinese:"只收現金嗎？", kana:"ジー ショウ シェンジン マ？" },
+  ],
+  "🏢 職場": [
+    { jp:"遅刻してすみません", chinese:"不好意思，我遲到了", kana:"ブーハオイース、ウォー チードール" },
+    { jp:"会議は何時ですか？", chinese:"會議幾點開始？", kana:"ホイイー ジーディェン カイシー？" },
+    { jp:"メールを送ってください", chinese:"請傳郵件給我", kana:"チン チュアン ヨウジェン ゲイ ウォー" },
+    { jp:"もう一度説明してください", chinese:"可以再解釋一次嗎？", kana:"クーイー ザイ ジェシー イーツー マ？" },
+    { jp:"今日は半休を取ります", chinese:"今天我要請半天假", kana:"ジンティェン ウォー ヤオ チン バンティェン ジャー" },
+    { jp:"よろしくお願いします", chinese:"請多多關照", kana:"チン ドゥオドゥオ グアンチャオ" },
+    { jp:"一緒にランチいかがですか？", chinese:"一起去吃午飯吧？", kana:"イーチー チュ チー ウーファン バ？" },
+    { jp:"レポートはいつまでですか？", chinese:"報告什麼時候要交？", kana:"バオガオ ションモーシーホウ ヤオ ジャオ？" },
+    { jp:"お先に失礼します", chinese:"我先走了，再見", kana:"ウォー シェン ゾウ ラ、ザイジェン" },
+    { jp:"お疲れ様でした", chinese:"辛苦了", kana:"シンクー ラ" },
+    { jp:"ご確認をお願いします", chinese:"麻煩您確認一下", kana:"マーファン ニン チュエレン イーシャー" },
+    { jp:"資料を共有してください", chinese:"請分享資料給我", kana:"チン フェンシャン ズーリャオ ゲイ ウォー" },
+  ],
+  "🏨 ホテル": [
+    { jp:"チェックインをお願いします", chinese:"我要辦理入住", kana:"ウォー ヤオ バンリー ルージュー" },
+    { jp:"チェックアウトをお願いします", chinese:"我要退房", kana:"ウォー ヤオ トゥイファン" },
+    { jp:"部屋の鍵をください", chinese:"請給我房間鑰匙", kana:"チン ゲイ ウォー ファンジェン ヤオシー" },
+    { jp:"エアコンが壊れています", chinese:"冷氣壞了", kana:"レンチー ホアイ ラ" },
+    { jp:"タオルを追加してください", chinese:"請幫我補充毛巾", kana:"チン バン ウォー ブーチョン マオジン" },
+    { jp:"WiFiのパスワードは？", chinese:"WiFi密碼是什麼？", kana:"WiFi ミーマー シー ションモー？" },
+    { jp:"レイトチェックアウトできますか？", chinese:"可以晚一點退房嗎？", kana:"クーイー ワン イーディェン トゥイファン マ？" },
+    { jp:"タクシーを呼んでもらえますか？", chinese:"可以幫我叫計程車嗎？", kana:"クーイー バン ウォー ジャオ ジーチョンチョー マ？" },
+    { jp:"荷物を預かってもらえますか？", chinese:"可以幫我保管行李嗎？", kana:"クーイー バン ウォー バオグアン シンリー マ？" },
+    { jp:"朝食は何時からですか？", chinese:"早餐幾點開始？", kana:"ザオツァン ジーディェン カイシー？" },
+    { jp:"近くのコンビニはどこですか？", chinese:"附近的便利商店在哪裡？", kana:"フージン ダ ピェンリーシャンディェン ザイ ナーリー？" },
+  ],
+};
+
+// ===== 状態変数 =====
+let bookmarks = new Set(JSON.parse(localStorage.getItem('taiwan_bookmarks') || '[]'));
+function saveBookmarks() { localStorage.setItem('taiwan_bookmarks', JSON.stringify([...bookmarks])); updateNavBadge(); }
+function bookmarkKey(cat, word) { return cat + '::' + word.thai; }
+
+let flashCat = CATEGORIES[0];
+let flashIdx = 0;
+let flashFlipped = false;
+let flashOrder = [];
+let flashKnown = [];
+let flashReviewMode = false;
+let flashReviewList = [];
+
+let quizCat = CATEGORIES[0];
+let quizQuestions = [];
+let quizIdx = 0;
+let quizCorrect = 0;
+let quizWrong = 0;
+let quizAnswered = false;
+
+// ===== カテゴリボタン描画 =====
+function renderCats() {
+  const reviewCount = bookmarks.size;
+  ['flash-cats','quiz-cats'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.innerHTML = CATEGORIES.map(c => `
+      <button class="cat-btn ${(i===0?flashCat:quizCat)===c?'selected':''}"
+        onclick="${i===0?'setFlashCat':'setQuizCat'}('${c}')">${c}</button>
+    `).join('') + `<button class="cat-btn ${(i===0?flashCat:quizCat)==='__review__'?'selected':''}"
+        onclick="${i===0?'setFlashCatReview':'setQuizCatReview'}()">📌 復習リスト${reviewCount>0?`<span class='review-badge'>${reviewCount}</span>`:''}</button>`;
+  });
+}
+
+function shuffleFlash() {
+  flashReviewMode = false;
+  flashOrder = shuffle(WORDS[flashCat].map((_, i) => i));
+  flashKnown = new Array(flashOrder.length).fill(null);
+  flashIdx = 0;
+}
+
+function setFlashCat(c) {
+  flashCat = c; flashReviewMode = false; shuffleFlash(); flashFlipped = false;
+  renderCats();
+  document.getElementById('flash-result').style.display = 'none';
+  document.getElementById('judge-controls').style.display = 'none';
+  document.getElementById('flash-card').style.display = 'block';
+  document.querySelector('.card-controls').style.display = 'flex';
+  renderCard();
+}
+function setQuizCat(c) { quizCat = c; renderCats(); }
+
+function setFlashCatReview() {
+  flashCat = '__review__'; flashReviewMode = true; flashReviewList = [];
+  for (const key of bookmarks) {
+    const [cat, thai] = key.split('::');
+    if (WORDS[cat]) { const w = WORDS[cat].find(x => x.thai === thai); if (w) flashReviewList.push({...w, _cat: cat}); }
+  }
+  flashReviewList = shuffle(flashReviewList);
+  flashKnown = new Array(flashReviewList.length).fill(null);
+  flashIdx = 0; flashFlipped = false;
+  renderCats();
+  if (flashReviewList.length === 0) {
+    alert('復習リストが空です。カードの 🔖 ボタンか、クイズで間違えると自動追加されます。');
+    return;
+  }
+  document.getElementById('flash-result').style.display = 'none';
+  document.getElementById('judge-controls').style.display = 'none';
+  document.getElementById('flash-card').style.display = 'block';
+  document.querySelector('.card-controls').style.display = 'flex';
+  renderCard();
+}
+function setQuizCatReview() { quizCat = '__review__'; renderCats(); }
+
+// ===== フラッシュカード =====
+function currentFlashWord() {
+  return flashReviewMode ? flashReviewList[flashIdx] : WORDS[flashCat][flashOrder[flashIdx]];
+}
+
+function renderCard() {
+  const w = currentFlashWord(); if (!w) return;
+  document.getElementById('card-chinese').textContent = w.thai;
+  document.getElementById('card-kana').textContent = w.kana;
+  document.getElementById('card-roman').textContent = w.roman;
+  document.getElementById('card-meaning').textContent = w.meaning;
+  document.getElementById('card-example').textContent = w.ex || '';
+  document.getElementById('card-example-roman').textContent = w.exRoman || '';
+  document.getElementById('card-example-block').style.display = w.ex ? 'block' : 'none';
+  const total = flashReviewMode ? flashReviewList.length : WORDS[flashCat].length;
+  document.getElementById('flash-progress').textContent = `${flashIdx+1} / ${total}`;
+  document.getElementById('flash-bar').style.width = `${((flashIdx+1)/total)*100}%`;
+  const card = document.getElementById('flash-card');
+  card.style.transition = 'none'; card.classList.remove('flipped');
+  card.offsetHeight; card.style.transition = '';
+  document.getElementById('judge-controls').style.display = 'none';
+  flashFlipped = false;
+  const cat = flashReviewMode ? (w._cat || flashCat) : flashCat;
+  document.getElementById('bookmark-btn').classList.toggle('active', bookmarks.has(bookmarkKey(cat, w)));
+}
+
+function flipCard() {
+  flashFlipped = !flashFlipped;
+  document.getElementById('flash-card').classList.toggle('flipped', flashFlipped);
+  document.getElementById('judge-controls').style.display = flashFlipped ? 'flex' : 'none';
+}
+
+function judgeCard(known) {
+  flashKnown[flashIdx] = known;
+  if (known) { const w = currentFlashWord(); learnedWords.add(w.thai); saveLearnedWords(); }
+  if (!known) {
+    const w = currentFlashWord();
+    const cat = flashReviewMode ? (w._cat || flashCat) : flashCat;
+    bookmarks.add(bookmarkKey(cat, w)); saveBookmarks();
+  }
+  const total = flashReviewMode ? flashReviewList.length : WORDS[flashCat].length;
+  if (flashIdx + 1 >= total) showFlashResult(); else { flashIdx++; renderCard(); }
+}
+
+function toggleBookmark() {
+  const w = currentFlashWord(); if (!w) return;
+  const cat = flashReviewMode ? (w._cat || flashCat) : flashCat;
+  const key = bookmarkKey(cat, w);
+  if (bookmarks.has(key)) bookmarks.delete(key); else bookmarks.add(key);
+  saveBookmarks(); renderCard(); renderCats();
+}
+
+function showFlashResult() {
+  document.getElementById('judge-controls').style.display = 'none';
+  document.getElementById('flash-card').style.display = 'none';
+  document.querySelector('.card-controls').style.display = 'none';
+  const total = flashKnown.length;
+  const knownCount = flashKnown.filter(x => x === true).length;
+  const unknownCount = flashKnown.filter(x => x === false).length;
+  const pct = Math.round(knownCount / total * 100);
+  document.getElementById('fr-score').textContent = `${pct}%`;
+  document.getElementById('fr-known-count').textContent = `✓ わかった ${knownCount}`;
+  document.getElementById('fr-unknown-count').textContent = `✗ わからなかった ${unknownCount}`;
+  let emoji, msg;
+  if (pct === 100) { emoji='🏆'; msg='完璧！全部わかった！'; }
+  else if (pct >= 80) { emoji='🎉'; msg='よくできました！'; }
+  else if (pct >= 50) { emoji='😊'; msg='復習リストで苦手を克服しよう！'; }
+  else { emoji='📚'; msg='まだまだ大丈夫！繰り返し練習しよう！'; }
+  document.getElementById('fr-emoji').textContent = emoji;
+  document.getElementById('fr-msg').textContent = msg;
+  document.getElementById('fr-review-btn').style.display = bookmarks.size > 0 ? 'inline-block' : 'none';
+  document.getElementById('flash-result').style.display = 'block';
+}
+
+function retryFlash() {
+  document.getElementById('flash-result').style.display = 'none';
+  document.getElementById('flash-card').style.display = 'block';
+  document.querySelector('.card-controls').style.display = 'flex';
+  if (flashReviewMode) setFlashCatReview(); else { shuffleFlash(); renderCard(); }
+}
+function startReviewMode() {
+  document.getElementById('flash-result').style.display = 'none';
+  document.getElementById('flash-card').style.display = 'block';
+  document.querySelector('.card-controls').style.display = 'flex';
+  setFlashCatReview();
+}
+function nextCard() {
+  const total = flashReviewMode ? flashReviewList.length : WORDS[flashCat].length;
+  flashIdx = (flashIdx + 1) % total; renderCard();
+}
+function prevCard() {
+  const total = flashReviewMode ? flashReviewList.length : WORDS[flashCat].length;
+  flashIdx = (flashIdx - 1 + total) % total; renderCard();
+}
+
+// ===== クイズ =====
+function startQuiz() {
+  let words;
+  if (quizCat === '__review__') {
+    words = [];
+    for (const key of bookmarks) {
+      const [cat, thai] = key.split('::');
+      if (WORDS[cat]) { const w = WORDS[cat].find(x => x.thai === thai); if (w) words.push({...w, _cat: cat}); }
+    }
+    if (words.length === 0) { alert('復習リストが空です。'); return; }
+  } else { words = WORDS[quizCat]; }
+  quizQuestions = shuffle([...words]).slice(0, Math.min(10, words.length));
+  quizIdx = 0; quizCorrect = 0; quizWrong = 0;
+  document.getElementById('quiz-start-area').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-area').style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  quizAnswered = false;
+  const q = quizQuestions[quizIdx];
+  document.getElementById('q-chinese').textContent = q.thai;
+  document.getElementById('q-kana').textContent = q.kana;
+  document.getElementById('q-roman').textContent = q.roman;
+  document.getElementById('quiz-progress').textContent = `${quizIdx+1} / ${quizQuestions.length}`;
+  document.getElementById('quiz-bar').style.width = `${((quizIdx+1)/quizQuestions.length)*100}%`;
+  document.getElementById('q-feedback').style.display = 'none';
+  document.getElementById('q-next-btn').style.display = 'none';
+  const pool = quizCat === '__review__' ? Object.values(WORDS).flat() : WORDS[quizCat];
+  const wrong = shuffle(pool.filter(w => w.meaning !== q.meaning)).slice(0,3);
+  const opts = shuffle([q, ...wrong]);
+  document.getElementById('q-options').innerHTML = opts.map(o =>
+    `<button class="option-btn" onclick="answerQuiz(this,'${esc(o.meaning)}','${esc(q.meaning)}')">${o.meaning}</button>`
+  ).join('');
+}
+
+function esc(s) { return s.replace(/'/g,"&#39;"); }
+function decodeHtml(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
+
+function answerQuiz(btn, chosen, correct) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (decodeHtml(b.textContent) === decodeHtml(correct)) b.classList.add('correct');
+  });
+  const fb = document.getElementById('q-feedback');
+  const q = quizQuestions[quizIdx];
+  if (decodeHtml(chosen) === decodeHtml(correct)) {
+    quizCorrect++; btn.classList.add('correct');
+    fb.className = 'feedback correct'; fb.textContent = '⭕ 正解！';
+  } else {
+    quizWrong++; btn.classList.add('wrong');
+    fb.className = 'feedback wrong'; fb.textContent = `❌ 不正解。正解は「${decodeHtml(correct)}」`;
+    const cat = q._cat || quizCat;
+    bookmarks.add(bookmarkKey(cat, q)); saveBookmarks(); renderCats();
+  }
+  fb.style.display = 'block';
+  document.getElementById('q-correct').textContent = quizCorrect;
+  document.getElementById('q-wrong').textContent = quizWrong;
+  document.getElementById('q-total').textContent = quizQuestions.length;
+  document.getElementById('q-next-btn').textContent = quizIdx + 1 >= quizQuestions.length ? '結果を見る' : '次の問題へ';
+  document.getElementById('q-next-btn').style.display = 'block';
+}
+
+function nextQuestion() {
+  quizIdx++;
+  if (quizIdx >= quizQuestions.length) showResult(); else renderQuestion();
+}
+
+function showResult() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'block';
+  const pct = Math.round(quizCorrect / quizQuestions.length * 100);
+  document.getElementById('res-score').textContent = `${quizCorrect} / ${quizQuestions.length}（${pct}%）`;
+  let emoji, msg;
+  if (pct === 100) { emoji='🏆'; msg='完璧！素晴らしい！'; }
+  else if (pct >= 80) { emoji='🎉'; msg='よくできました！'; }
+  else if (pct >= 60) { emoji='😊'; msg='もう少し！引き続き頑張ろう！'; }
+  else { emoji='📚'; msg='復習してみよう！フラッシュカードも使ってね。'; }
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-msg').textContent = msg;
+}
+
+function resetQuiz() {
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-start-area').style.display = 'block';
+  quizCorrect = 0; quizWrong = 0;
+  document.getElementById('q-correct').textContent = 0;
+  document.getElementById('q-wrong').textContent = 0;
+  document.getElementById('q-total').textContent = 0;
+}
+
+// ===== ユーティリティ =====
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'review') renderReviewList();
+  if (name === 'home') renderHome();
+  if (name === 'phrase') renderPhraseScreen();
+  if (name === 'practice') showPractice('menu');
+}
+
+// ===== 復習リスト =====
+function renderReviewList() {
+  const body = document.getElementById('review-list-body');
+  const countLine = document.getElementById('review-count-line');
+  if (bookmarks.size === 0) {
+    countLine.textContent = '';
+    body.innerHTML = '<div class="review-list-empty">復習リストは空です。<br>フラッシュカードで「わからなかった」を押すか、🔖 ボタンで追加されます。</div>';
+    return;
+  }
+  countLine.textContent = `${bookmarks.size}語が登録されています`;
+  const items = [];
+  for (const key of bookmarks) {
+    const [cat, thai] = key.split('::');
+    if (WORDS[cat]) { const w = WORDS[cat].find(x => x.thai === thai); if (w) items.push({ key, cat, w }); }
+  }
+  body.innerHTML = items.map(({ key, cat, w }) => `
+    <div class="review-word-item">
+      <div class="review-word-chinese">${w.thai}</div>
+      <div class="review-word-info">
+        <div class="review-word-meaning">${w.meaning}</div>
+        <div class="review-word-kana">${w.kana}</div>
+        <div class="review-word-cat">${cat}</div>
+      </div>
+      <button class="btn-remove-bookmark" onclick="removeBookmark('${key.replace(/'/g,"&#39;")}')">削除</button>
+    </div>
+  `).join('');
+}
+
+function removeBookmark(key) { bookmarks.delete(key); saveBookmarks(); renderReviewList(); renderCats(); updateNavBadge(); }
+function clearAllBookmarks() {
+  if (!confirm(`復習リスト（${bookmarks.size}語）をすべて削除しますか？`)) return;
+  bookmarks.clear(); saveBookmarks(); renderReviewList(); renderCats(); updateNavBadge();
+}
+function startFromReview() {
+  if (bookmarks.size === 0) { alert('復習リストが空です。'); return; }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('flash').classList.add('active');
+  document.querySelector('nav button:first-child').classList.add('active');
+  setFlashCatReview();
+}
+function updateNavBadge() {
+  const badge = document.getElementById('nav-review-badge');
+  badge.textContent = bookmarks.size;
+  badge.style.display = bookmarks.size > 0 ? 'inline' : 'none';
+}
+
+// ===== 音声再生（zh-TW）=====
+let currentAudio = null;
+let zhVoice = null;
+
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  zhVoice = voices.find(v => v.lang === 'zh-TW')
+    || voices.find(v => v.lang === 'zh-Hant-TW')
+    || voices.find(v => v.lang.startsWith('zh'))
+    || null;
+}
+loadVoices();
+if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakChinese(text, btnId) {
+  const btn = document.getElementById(btnId);
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  document.querySelectorAll('.speak-btn').forEach(b => b.classList.remove('speaking'));
+  if (btn) btn.classList.add('speaking');
+
+  if (typeof speechSynthesis !== 'undefined') {
+    loadVoices();
+    const utt = new SpeechSynthesisUtterance(text);
+    if (zhVoice) utt.voice = zhVoice;
+    utt.lang = 'zh-TW';
+    utt.rate = 0.85;
+    utt.onend = () => { if (btn) btn.classList.remove('speaking'); };
+    utt.onerror = () => { if (btn) btn.classList.remove('speaking'); tryGoogleTTS(text, btn); };
+    speechSynthesis.speak(utt);
+    return;
+  }
+  tryGoogleTTS(text, btn);
+}
+
+function tryGoogleTTS(text, btn) {
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-TW&client=tw-ob`;
+  const audio = new Audio(url);
+  currentAudio = audio;
+  audio.onended = () => { if (btn) btn.classList.remove('speaking'); currentAudio = null; };
+  audio.onerror = () => {
+    if (btn) btn.classList.remove('speaking');
+    currentAudio = null;
+    const msg = document.createElement('div');
+    msg.className = 'no-voice-msg';
+    msg.textContent = '音声を再生できませんでした';
+    if (btn) { btn.insertAdjacentElement('afterend', msg); setTimeout(() => msg.remove(), 3000); }
+  };
+  audio.play().catch(() => { currentAudio = null; if (btn) btn.classList.remove('speaking'); });
+}
+
+// ===== パスワード認証 =====
+function checkPw() {
+  const input = document.getElementById('pw-input').value;
+  if (input === 'ilovetaiwan') {
+    sessionStorage.setItem('taiwan_auth', '1');
+    document.getElementById('pw-screen').style.display = 'none';
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+if (sessionStorage.getItem('taiwan_auth') === '1') {
+  document.getElementById('pw-screen').style.display = 'none';
+}
+
+// ===== フレーズ画面 =====
+let currentPhrasecat = "🆘 緊急";
+function renderPhraseScreen() {
+  const cats = document.getElementById('phrase-cats');
+  cats.innerHTML = Object.keys(PHRASES).map(c => `
+    <button class="phrase-cat-btn ${c === currentPhrasecat ? 'selected' : ''} ${c === '🆘 緊急' ? 'emergency' : ''}"
+      onclick="setPhrasecat('${c.replace(/'/g,"&#39;")}')">${c}</button>
+  `).join('');
+  renderPhraseList();
+}
+function setPhrasecat(cat) { currentPhrasecat = cat; renderPhraseScreen(); }
+function renderPhraseList() {
+  const list = document.getElementById('phrase-list');
+  const phrases = PHRASES[currentPhrasecat] || [];
+  const isEmergency = currentPhrasecat === '🆘 緊急';
+  list.innerHTML = (isEmergency ? '<div class="sos-banner">🆘 緊急時にすぐ使えるフレーズ</div>' : '') +
+    phrases.map((p, i) => `
+      <div class="phrase-item ${isEmergency ? 'emergency-item' : ''}">
+        <div class="phrase-texts">
+          <div class="phrase-jp">${p.jp}</div>
+          <div class="phrase-chinese">${p.chinese}</div>
+          <div class="phrase-kana">${p.kana}</div>
+        </div>
+        <button class="speak-btn" id="ph-speak-${i}"
+          onclick="speakChinese('${p.chinese.replace(/'/g,"&#39;")}','ph-speak-${i}')">🔊</button>
+      </div>
+    `).join('');
+}
+
+// ===== 練習画面 =====
+function showPractice(mode) {
+  ['practice-menu','practice-chars','practice-tones','practice-numbers','practice-charquiz'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  if (mode === 'menu') {
+    document.getElementById('practice-menu').style.display = 'block';
+  } else if (mode === 'chars') {
+    document.getElementById('practice-chars').style.display = 'block';
+    renderRadicalsList();
+  } else if (mode === 'tones') {
+    document.getElementById('practice-tones').style.display = 'block';
+    renderTonesList();
+  } else if (mode === 'numbers') {
+    document.getElementById('practice-numbers').style.display = 'block';
+    nqCorrect = 0; nqWrong = 0; nqTotal = 0; nqOrder = []; nqIdx = 0;
+    updateNQScore(); nextNumberQ();
+  } else if (mode === 'charquiz') {
+    document.getElementById('practice-charquiz').style.display = 'block';
+    cqCorrect = 0; cqWrong = 0; cqOrder = []; cqIdx = 0;
+    document.getElementById('cq-correct').textContent = 0;
+    document.getElementById('cq-wrong').textContent = 0;
+    nextCharQ();
+  }
+}
+
+function renderRadicalsList() {
+  document.getElementById('chars-list').innerHTML = RADICALS.map(r => `
+    <div class="phrase-item">
+      <div style="font-size:2.5rem;min-width:60px;text-align:center;font-weight:bold">${r.char}</div>
+      <div class="phrase-texts">
+        <div class="phrase-jp">${r.sound}　<span style="color:var(--red);font-size:0.8rem">${r.reading}</span></div>
+        <div style="font-size:0.82rem;color:var(--gray-dark)">${r.desc}</div>
+        <div style="font-size:0.82rem;color:var(--gray-dark)">例：${r.example}（${r.exMeaning}）</div>
+      </div>
+      <button class="speak-btn" id="rad-speak-${r.char}"
+        onclick="speakChinese('${r.example}','rad-speak-${r.char}')">🔊</button>
+    </div>
+  `).join('');
+}
+
+function renderTonesList() {
+  const colors = ['#cc0000','#0055cc','#009933','#cc5500','#666666'];
+  document.getElementById('tones-list').innerHTML = TONES.map((t, i) => `
+    <div class="tone-card" style="border-left:4px solid ${colors[i]}">
+      <div class="tone-name" style="color:${colors[i]}">${t.name} <span style="font-size:0.8rem;font-weight:normal;color:var(--gray-dark)">${t.nameChinese}</span></div>
+      <div style="font-size:0.8rem;color:var(--gray-dark);margin-bottom:8px">${t.desc}</div>
+      <div class="tone-example-row">
+        <div>
+          <div style="font-size:0.7rem;color:var(--gray-dark)">声調記号</div>
+          <div class="tone-mark">${t.mark}</div>
+        </div>
+        <div>
+          <div style="font-size:0.7rem;color:var(--gray-dark)">例</div>
+          <div class="tone-chinese" style="font-size:2rem">${t.example}</div>
+        </div>
+        <div>
+          <div style="font-size:0.7rem;color:var(--gray-dark)">読み方</div>
+          <div style="font-size:0.85rem;color:var(--red);font-weight:bold">${t.kana}</div>
+          <div style="font-size:0.75rem;color:var(--gray-dark)">${t.meaning}</div>
+        </div>
+        <button class="speak-btn" id="tone-speak-${i}"
+          onclick="speakChinese('${t.example}','tone-speak-${i}')">🔊</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--black);background:var(--gray-light);padding:6px 8px;margin-top:8px">
+        💡 ${t.tip}
+      </div>
+    </div>
+  `).join('');
+}
+
+// 数字クイズ
+let nqCorrect = 0, nqWrong = 0, nqTotal = 0;
+let nqOrder = [], nqIdx = 0, nqAnswered = false;
+
+function updateNQScore() {
+  document.getElementById('nq-correct').textContent = nqCorrect;
+  document.getElementById('nq-wrong').textContent = nqWrong;
+  document.getElementById('nq-total').textContent = nqTotal;
+}
+
+function nextNumberQ() {
+  if (nqIdx >= nqOrder.length) { nqOrder = shuffle([...Array(NUMBER_QUIZ.length).keys()]); nqIdx = 0; }
+  nqAnswered = false;
+  const q = NUMBER_QUIZ[nqOrder[nqIdx++]];
+  document.getElementById('nq-number').textContent = q.display;
+  document.getElementById('nq-unit').textContent = q.unit ? `（${q.unit}）` : '';
+  document.getElementById('nq-feedback').style.display = 'none';
+  document.getElementById('nq-next').style.display = 'none';
+  const opts = shuffle([...q.options]);
+  document.getElementById('nq-options').innerHTML = opts.map(o =>
+    `<button class="option-btn" onclick="answerNQ(this,'${o.replace(/'/g,"&#39;")}','${q.answer.replace(/'/g,"&#39;")}')">${o}</button>`
+  ).join('');
+}
+
+function answerNQ(btn, chosen, correct) {
+  if (nqAnswered) return;
+  nqAnswered = true; nqTotal++;
+  document.querySelectorAll('#nq-options .option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+  const fb = document.getElementById('nq-feedback');
+  if (chosen === correct) {
+    nqCorrect++; btn.classList.add('correct');
+    fb.className = 'feedback correct'; fb.textContent = '⭕ 正解！';
+  } else {
+    nqWrong++; btn.classList.add('wrong');
+    fb.className = 'feedback wrong'; fb.textContent = `❌ 不正解。正解は「${correct}」`;
+  }
+  fb.style.display = 'block'; updateNQScore();
+  document.getElementById('nq-next').style.display = 'block';
+}
+
+// 部首クイズ
+let cqCorrect = 0, cqWrong = 0;
+let cqOrder = [], cqIdx = 0, cqAnswered = false;
+
+function nextCharQ() {
+  if (cqIdx >= cqOrder.length) { cqOrder = shuffle([...Array(RADICALS.length).keys()]); cqIdx = 0; }
+  cqAnswered = false;
+  const q = RADICALS[cqOrder[cqIdx++]];
+  document.getElementById('cq-char').textContent = q.char;
+  document.getElementById('cq-name').textContent = `例：${q.example}（${q.exMeaning}）`;
+  document.getElementById('cq-feedback').style.display = 'none';
+  document.getElementById('cq-next').style.display = 'none';
+  const wrongs = shuffle(RADICALS.filter(r => r.char !== q.char)).slice(0,3).map(r => r.sound);
+  const opts = shuffle([q.sound, ...wrongs]);
+  document.getElementById('cq-options').innerHTML = opts.map(o =>
+    `<button class="option-btn" onclick="answerCQ(this,'${o.replace(/'/g,"&#39;")}','${q.sound.replace(/'/g,"&#39;")}')">${o}</button>`
+  ).join('');
+}
+
+function answerCQ(btn, chosen, correct) {
+  if (cqAnswered) return;
+  cqAnswered = true;
+  document.querySelectorAll('#cq-options .option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+  const fb = document.getElementById('cq-feedback');
+  if (chosen === correct) {
+    cqCorrect++; btn.classList.add('correct');
+    fb.className = 'feedback correct'; fb.textContent = '⭕ 正解！';
+  } else {
+    cqWrong++; btn.classList.add('wrong');
+    fb.className = 'feedback wrong'; fb.textContent = `❌ 正解は「${correct}」`;
+  }
+  fb.style.display = 'block';
+  document.getElementById('cq-correct').textContent = cqCorrect;
+  document.getElementById('cq-wrong').textContent = cqWrong;
+  document.getElementById('cq-next').style.display = 'block';
+}
+
+// ===== 学習時間トラッキング =====
+let studyTimer = null;
+let sessionElapsed = 0;
+let dailyGoalMinutes = parseInt(localStorage.getItem('taiwan_daily_goal') || '10');
+
+function startStudyTimer() {
+  if (studyTimer) return;
+  studyTimer = setInterval(() => {
+    sessionElapsed++;
+    updateTimerChip();
+    if (sessionElapsed % 30 === 0) flushStudyTime();
+    if (document.getElementById('home').classList.contains('active')) renderHome();
+  }, 1000);
+}
+
+function flushStudyTime() {
+  if (sessionElapsed === 0) return;
+  const today = todayStr();
+  const data = JSON.parse(localStorage.getItem('taiwan_study_time') || '{}');
+  data[today] = (data[today] || 0) + sessionElapsed;
+  const keys = Object.keys(data).sort();
+  while (keys.length > 60) delete data[keys.shift()];
+  localStorage.setItem('taiwan_study_time', JSON.stringify(data));
+  sessionElapsed = 0;
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function getTodaySeconds() {
+  const data = JSON.parse(localStorage.getItem('taiwan_study_time') || '{}');
+  return (data[todayStr()] || 0) + sessionElapsed;
+}
+
+function getStreak() {
+  const data = JSON.parse(localStorage.getItem('taiwan_study_time') || '{}');
+  const today = todayStr();
+  let streak = 0;
+  let d = new Date();
+  if (!(data[today] || sessionElapsed > 0)) d = new Date(Date.now() - 86400000);
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().slice(0, 10);
+    if (data[key] > 0 || (key === today && sessionElapsed > 0)) {
+      streak++; d = new Date(d.getTime() - 86400000);
+    } else break;
+  }
+  return streak;
+}
+
+function updateTimerChip() {
+  const total = getTodaySeconds();
+  const m = Math.floor(total / 60), s = total % 60;
+  const chip = document.getElementById('timer-chip');
+  if (chip) chip.textContent = `⏱ ${m}:${String(s).padStart(2,'0')}`;
+}
+
+function setDailyGoal(mins) {
+  dailyGoalMinutes = mins;
+  localStorage.setItem('taiwan_daily_goal', String(mins));
+  renderHome();
+}
+
+// ===== 覚えた単語 =====
+let learnedWords = new Set(JSON.parse(localStorage.getItem('taiwan_learned') || '[]'));
+function saveLearnedWords() { localStorage.setItem('taiwan_learned', JSON.stringify([...learnedWords])); }
+function getTotalWords() { return Object.values(WORDS).reduce((s, a) => s + a.length, 0); }
+
+// ===== ホーム画面 =====
+function renderHome() {
+  const todaySecs = getTodaySeconds();
+  const goalSecs = dailyGoalMinutes * 60;
+  const pct = Math.min(100, Math.round(todaySecs / goalSecs * 100));
+  const m = Math.floor(todaySecs / 60), s = todaySecs % 60;
+  const learned = learnedWords.size;
+  const total = getTotalWords();
+  const lPct = total > 0 ? Math.round(learned / total * 100) : 0;
+  document.getElementById('home-timer').innerHTML =
+    `${m}分${s}秒 ${pct >= 100 ? '<span class="goal-achieved">🎉 達成！</span>' : ''}`;
+  document.getElementById('home-goal').textContent = `目標 ${dailyGoalMinutes}分`;
+  document.getElementById('home-time-bar').style.width = pct + '%';
+  document.getElementById('home-time-pct').textContent = pct;
+  document.getElementById('home-streak').textContent = getStreak();
+  document.getElementById('home-learned').textContent = learned;
+  document.getElementById('home-total').textContent = total;
+  document.getElementById('home-learned-bar').style.width = lPct + '%';
+  document.getElementById('home-learned-pct').textContent = lPct;
+  [5, 10, 15, 30].forEach(n => {
+    const b = document.getElementById(`goal-btn-${n}`);
+    if (b) b.classList.toggle('selected', n === dailyGoalMinutes);
+  });
+}
+
+function confirmReset() {
+  if (!confirm('学習データをリセットしますか？\n\n・学習時間\n・覚えた単語\n・復習リスト\n\nこの操作は元に戻せません。')) return;
+  if (!confirm('本当にリセットしますか？')) return;
+  localStorage.removeItem('taiwan_study_time');
+  localStorage.removeItem('taiwan_learned');
+  localStorage.removeItem('taiwan_bookmarks');
+  learnedWords = new Set(); bookmarks = new Set(); sessionElapsed = 0;
+  renderHome(); renderCats(); updateNavBadge();
+  alert('リセットしました。');
+}
+
+function goStudy() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('flash').classList.add('active');
+  document.querySelector('nav button:nth-child(2)').classList.add('active');
+  startStudyTimer();
+}
+
+// ===== 初期化 =====
+shuffleFlash();
+renderCats();
+renderCard();
+updateNavBadge();
+renderHome();
+startStudyTimer();
+
