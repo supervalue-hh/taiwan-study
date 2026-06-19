@@ -6,8 +6,8 @@
 <title>OIC Group Language Learning App</title>
 <style>
   :root {
-    --red: #FF0000;
-    --black: #111111;
+    --red: #FF6B00;
+    --black: #1A1A1A;
     --white: #FFFFFF;
     --gray-light: #F5F5F5;
     --gray-mid: #CCCCCC;
@@ -318,6 +318,20 @@
   .goal-achieved {
     display: inline-block; background: var(--red); color: var(--white);
     font-size: 0.75rem; font-weight: bold; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
+  }
+
+  /* 文作り練習タイル */
+  .aq-tile {
+    padding: 10px 16px; border: 2px solid var(--black); border-radius: 8px;
+    background: var(--white); font-size: 0.88rem; font-weight: bold;
+    cursor: pointer; color: var(--black); transition: all 0.12s;
+    box-shadow: 0 3px 0 var(--black);
+  }
+  .aq-tile:hover { transform: translateY(-1px); }
+  .aq-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--black); }
+  .aq-tile-selected {
+    background: var(--red); color: var(--white);
+    border-color: var(--red); box-shadow: 0 3px 0 #cc5500;
   }
 
   /* フレーズ画面 */
@@ -745,6 +759,11 @@
         <div class="p-title">四声を覚えよう</div>
         <div class="p-desc">四声+軽声の違いを学ぶ</div>
       </button>
+      <button class="practice-card-btn" onclick="startArrangePractice()">
+        <div class="p-icon">🔤</div>
+        <div class="p-title">文作り練習</div>
+        <div class="p-desc">中国語を聞いて・見て、日本語に訳そう</div>
+      </button>
     </div>
   </div>
 
@@ -753,6 +772,52 @@
     <button class="btn-back-practice" onclick="showPractice('menu')">← メニューに戻る</button>
     <section><h2>基本部首 15種類</h2></section>
     <div id="chars-list"></div>
+  </div>
+
+  <!-- 文作り練習 -->
+  <div id="practice-arrange" style="display:none;padding:0">
+    <!-- 進捗バー -->
+    <div style="background:var(--gray-light);height:8px;margin-bottom:0">
+      <div id="aq-progress-bar" style="height:100%;background:var(--red);transition:width 0.4s ease;width:0%"></div>
+    </div>
+
+    <div style="padding:16px">
+      <!-- 問数 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <button class="btn-back-practice" style="margin:0" onclick="showPractice('menu')">← メニュー</button>
+        <div style="font-size:0.8rem;color:var(--gray-dark);font-weight:bold" id="aq-counter"></div>
+      </div>
+
+      <!-- 問題ラベル -->
+      <div style="font-size:1.05rem;font-weight:900;margin-bottom:20px;letter-spacing:0.02em" id="aq-instruction">この中国語を日本語に訳してください</div>
+
+      <!-- 中国語 + 音声 -->
+      <div style="background:var(--gray-light);border-left:4px solid var(--red);padding:14px 16px;margin-bottom:24px;display:flex;align-items:center;gap:14px">
+        <button onclick="aqSpeak()" style="width:44px;height:44px;border-radius:50%;background:var(--red);border:none;cursor:pointer;font-size:1.2rem;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white">🔊</button>
+        <div>
+          <div style="font-size:0.75rem;color:var(--gray-dark);margin-bottom:2px" id="aq-roman"></div>
+          <div style="font-size:1.5rem;font-weight:bold" id="aq-chinese"></div>
+        </div>
+      </div>
+
+      <!-- 答えエリア -->
+      <div style="min-height:54px;border-bottom:2px solid var(--black);padding:8px 4px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center" id="aq-answer-area">
+        <span style="color:var(--gray-mid);font-size:0.85rem" id="aq-placeholder">ここにタイルを並べてください</span>
+      </div>
+      <div style="height:2px;background:var(--gray-mid);margin-bottom:20px"></div>
+
+      <!-- タイルバンク -->
+      <div id="aq-tile-bank" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;min-height:50px"></div>
+
+      <!-- 結果メッセージ -->
+      <div id="aq-result" style="display:none;padding:14px;border-radius:4px;margin-bottom:16px;font-weight:bold;font-size:0.9rem"></div>
+
+      <!-- ボタン -->
+      <button id="aq-btn" onclick="aqCheck()"
+        style="width:100%;padding:16px;background:var(--gray-mid);color:var(--white);border:none;font-size:1rem;font-weight:900;letter-spacing:0.1em;cursor:pointer;border-radius:4px;transition:background 0.2s">
+        答えを確認する
+      </button>
+    </div>
   </div>
 
   <!-- 四声説明 -->
@@ -1732,7 +1797,7 @@ function renderPhraseList() {
 
 // ===== 練習画面 =====
 function showPractice(mode) {
-  ['practice-menu','practice-chars','practice-tones','practice-numbers','practice-charquiz'].forEach(id => {
+  ['practice-menu','practice-chars','practice-tones','practice-numbers','practice-charquiz','practice-arrange'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
   if (mode === 'menu') {
@@ -1740,6 +1805,8 @@ function showPractice(mode) {
   } else if (mode === 'chars') {
     document.getElementById('practice-chars').style.display = 'block';
     renderRadicalsList();
+  } else if (mode === 'arrange') {
+    document.getElementById('practice-arrange').style.display = 'block';
   } else if (mode === 'tones') {
     document.getElementById('practice-tones').style.display = 'block';
     renderTonesList();
@@ -2103,6 +2170,156 @@ function renderDailyBars(data, today) {
       return `<div style="flex:1;font-size:0.6rem;text-align:center;color:${col};font-weight:${isToday ? 'bold' : 'normal'}">${d.label}</div>`;
     }).join('');
   }
+}
+
+// ===== 文作り練習（Duolingo風）=====
+const ARRANGE_Q = [
+  { chinese:"謝謝！", roman:"xiè xie", answer:"ありがとう！", tiles:["ありがとう！","お願いします","どうぞ","すみません"] },
+  { chinese:"歡迎光臨", roman:"huān yíng guāng lín", answer:"いらっしゃいませ", tiles:["いらっしゃいませ","ありがとうございました","お疲れ様でした","よくできました"] },
+  { chinese:"請補充商品", roman:"qǐng bǔ chōng shāng pǐn", answer:"商品を補充してください", tiles:["商品を","補充して","ください","整理して","確認して","発注して"] },
+  { chinese:"請整理貨架", roman:"qǐng zhěng lǐ huò jià", answer:"棚を整理してください", tiles:["棚を","整理して","ください","補充して","確認して","片付けて"] },
+  { chinese:"我現在示範給你看，請注意看", roman:"wǒ xiàn zài shì fàn gěi nǐ kàn", answer:"今から見本を見せるので見ていてください", tiles:["今から","見本を","見せるので","見ていてください","やってみてください","聞いてください"] },
+  { chinese:"請照這個方式試試看", roman:"qǐng zhào zhè gè fāng shì shì shì kàn", answer:"同じようにやってみてください", tiles:["同じように","やってみて","ください","見ていて","聞いて","繰り返して"] },
+  { chinese:"你明白了嗎？", roman:"nǐ míng bái le ma", answer:"わかりましたか？", tiles:["わかりましたか？","できましたか？","見ましたか？","聞きましたか？"] },
+  { chinese:"有不懂的地方，隨時來問我", roman:"yǒu bù dǒng de dì fāng suí shí lái wèn wǒ", answer:"わからないことがあったらすぐ聞いてください", tiles:["わからないことが","あったら","すぐ","聞いてください","やってください","見てください"] },
+  { chinese:"做得很好！繼續保持", roman:"zuò de hěn hǎo jì xù bǎo chí", answer:"よくできました！その調子で", tiles:["よくできました！","その調子で","頑張ってください","ありがとう","お疲れ様"] },
+  { chinese:"請確認保存期限", roman:"qǐng què rèn bǎo cún qī xiàn", answer:"賞味期限を確認してください", tiles:["賞味期限を","確認して","ください","補充して","整理して","貼って"] },
+  { chinese:"請貼折扣貼紙", roman:"qǐng tiē zhé kòu tiē zhǐ", answer:"値引きシールを貼ってください", tiles:["値引きシールを","貼って","ください","確認して","外して","準備して"] },
+  { chinese:"商品缺貨了", roman:"shāng pǐn quē huò le", answer:"欠品が出ています", tiles:["欠品が","出ています","補充されています","発注済みです","確認できました"] },
+  { chinese:"請去收銀台", roman:"qǐng qù shōu yín tái", answer:"レジに入ってください", tiles:["レジに","入って","ください","戻って","準備して","確認して"] },
+  { chinese:"辛苦了", roman:"xīn kǔ le", answer:"お疲れ様でした", tiles:["お疲れ様でした","よろしくお願いします","ありがとうございました","いらっしゃいませ"] },
+  { chinese:"我們一起加油！", roman:"wǒ men yī qǐ jiā yóu", answer:"一緒にやりましょう！", tiles:["一緒に","やりましょう！","頑張ってください","お疲れ様","ありがとう"] },
+  { chinese:"請把商品往前移", roman:"qǐng bǎ shāng pǐn wǎng qián yí", answer:"商品を前に出してください", tiles:["商品を","前に","出して","ください","整理して","補充して"] },
+  { chinese:"請確認今天的銷售額", roman:"qǐng què rèn jīn tiān de xiāo shòu é", answer:"売上を確認してください", tiles:["売上を","確認して","ください","報告して","発注して","整理して"] },
+  { chinese:"客人有投訴，請過來", roman:"kè rén yǒu tóu sù qǐng guò lái", answer:"お客様クレームです、来てください", tiles:["お客様","クレームです、","来て","ください","確認して","対応して"] },
+  { chinese:"請準備開店", roman:"qǐng zhǔn bèi kāi diàn", answer:"開店の準備をしてください", tiles:["開店の","準備を","して","ください","閉店の","発注の"] },
+  { chinese:"你先去休息吧", roman:"nǐ xiān qù xiū xi ba", answer:"お先にどうぞ（休憩）", tiles:["お先に","どうぞ（休憩）","ありがとうございます","お疲れ様でした","よろしくお願いします"] },
+];
+
+let aqIdx = 0, aqOrder = [], aqAnswered = false, aqSelected = [];
+
+function startArrangePractice() {
+  aqOrder = [...Array(ARRANGE_Q.length).keys()].sort(() => Math.random() - 0.5);
+  aqIdx = 0;
+  showPractice('arrange');
+  aqRender();
+}
+
+function aqRender() {
+  aqAnswered = false;
+  aqSelected = [];
+  const q = ARRANGE_Q[aqOrder[aqIdx]];
+  const total = ARRANGE_Q.length;
+
+  document.getElementById('aq-progress-bar').style.width = (aqIdx / total * 100) + '%';
+  document.getElementById('aq-counter').textContent = `${aqIdx + 1} / ${total}`;
+  document.getElementById('aq-chinese').textContent = q.chinese;
+  document.getElementById('aq-roman').textContent = q.roman;
+  document.getElementById('aq-result').style.display = 'none';
+  document.getElementById('aq-btn').textContent = '答えを確認する';
+  document.getElementById('aq-btn').style.background = 'var(--gray-mid)';
+  document.getElementById('aq-btn').onclick = aqCheck;
+
+  // タイルをシャッフル
+  const tiles = [...q.tiles].sort(() => Math.random() - 0.5);
+  aqRenderTiles(tiles);
+  aqRenderAnswer();
+}
+
+function aqRenderTiles(tiles) {
+  const bank = document.getElementById('aq-tile-bank');
+  bank.innerHTML = '';
+  tiles.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'aq-tile';
+    btn.textContent = t;
+    btn.dataset.idx = i;
+    btn.dataset.word = t;
+    btn.onclick = () => aqSelectTile(btn, t);
+    bank.appendChild(btn);
+  });
+}
+
+function aqSelectTile(btn, word) {
+  if (aqAnswered) return;
+  btn.style.display = 'none';
+  aqSelected.push({ word, btn });
+  aqRenderAnswer();
+  updateAqBtn();
+}
+
+function aqRemoveTile(idx) {
+  if (aqAnswered) return;
+  const removed = aqSelected.splice(idx, 1)[0];
+  removed.btn.style.display = '';
+  aqRenderAnswer();
+  updateAqBtn();
+}
+
+function aqRenderAnswer() {
+  const area = document.getElementById('aq-answer-area');
+  const ph = document.getElementById('aq-placeholder');
+  if (aqSelected.length === 0) {
+    area.innerHTML = '';
+    const span = document.createElement('span');
+    span.id = 'aq-placeholder';
+    span.style.cssText = 'color:var(--gray-mid);font-size:0.85rem';
+    span.textContent = 'ここにタイルを並べてください';
+    area.appendChild(span);
+  } else {
+    area.innerHTML = '';
+    aqSelected.forEach((item, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'aq-tile aq-tile-selected';
+      btn.textContent = item.word;
+      btn.onclick = () => aqRemoveTile(i);
+      area.appendChild(btn);
+    });
+  }
+}
+
+function updateAqBtn() {
+  const btn = document.getElementById('aq-btn');
+  btn.style.background = aqSelected.length > 0 ? 'var(--red)' : 'var(--gray-mid)';
+}
+
+function aqCheck() {
+  if (aqSelected.length === 0 || aqAnswered) return;
+  aqAnswered = true;
+  const q = ARRANGE_Q[aqOrder[aqIdx]];
+  const userAns = aqSelected.map(s => s.word).join('');
+  const correct = userAns === q.answer;
+  const result = document.getElementById('aq-result');
+  result.style.display = 'block';
+  if (correct) {
+    result.style.background = '#fff3e0';
+    result.style.borderLeft = '4px solid var(--red)';
+    result.style.color = 'var(--black)';
+    result.innerHTML = `✅ 正解！<br><span style="font-size:0.8rem;color:var(--gray-dark)">${q.answer}</span>`;
+  } else {
+    result.style.background = '#ffeaea';
+    result.style.borderLeft = '4px solid #cc0000';
+    result.style.color = 'var(--black)';
+    result.innerHTML = `❌ 不正解<br><span style="font-size:0.8rem;color:var(--gray-dark)">正解：${q.answer}</span>`;
+  }
+  const btn = document.getElementById('aq-btn');
+  btn.textContent = aqIdx + 1 < ARRANGE_Q.length ? '次の問題 →' : '結果を見る';
+  btn.style.background = 'var(--black)';
+  btn.onclick = aqNext;
+}
+
+function aqNext() {
+  aqIdx++;
+  if (aqIdx >= ARRANGE_Q.length) {
+    showPractice('menu');
+    return;
+  }
+  aqRender();
+}
+
+function aqSpeak() {
+  const q = ARRANGE_Q[aqOrder[aqIdx]];
+  speakChinese(q.chinese, 'aq-speak');
 }
 
 function confirmReset() {
