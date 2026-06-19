@@ -443,13 +443,14 @@
 </header>
 
 <nav>
+  <button onclick="showScreen('home')">🏠 ホーム</button>
   <button onclick="showScreen('phrase')">🗣 フレーズ</button>
   <button onclick="showScreen('practice')">🎮 練習</button>
   <button onclick="showScreen('review')">📌 復習<span id="nav-review-badge" class="review-badge" style="display:none"></span></button>
 </nav>
 
 <!-- HOME SCREEN -->
-<div id="home" class="screen" style="padding:0">
+<div id="home" class="screen active" style="padding:0">
 
   <!-- ヒーローブロック：連続学習＋円形タイマー -->
   <div style="background:var(--black);color:var(--white);padding:20px 16px 24px">
@@ -620,7 +621,7 @@
 </div>
 
 <!-- FLASHCARD SCREEN -->
-<div id="flash" class="screen active">
+<div id="flash" class="screen">
   <section>
     <h2>カテゴリを選ぶ</h2>
     <div class="category-grid" id="flash-cats"></div>
