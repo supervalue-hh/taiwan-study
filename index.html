@@ -443,9 +443,6 @@
 </header>
 
 <nav>
-  <button onclick="showScreen('home')">🏠 ホーム</button>
-  <button class="active" onclick="showScreen('flash')">📇 カード</button>
-  <button onclick="showScreen('quiz')">📝 クイズ</button>
   <button onclick="showScreen('phrase')">🗣 フレーズ</button>
   <button onclick="showScreen('practice')">🎮 練習</button>
   <button onclick="showScreen('review')">📌 復習<span id="nav-review-badge" class="review-badge" style="display:none"></span></button>
@@ -524,7 +521,7 @@
     <div class="home-course-card" onclick="showScreen('flash')">
       <div class="home-course-icon" style="background:#fff0f0">📇</div>
       <div class="home-course-body">
-        <div class="home-course-title">フラッシュカード</div>
+        <div class="home-course-title">単語カード</div>
         <div class="home-course-desc">カテゴリ別に単語をカードで学習。タップして答えを確認しよう</div>
       </div>
       <div class="home-course-arrow">›</div>
@@ -555,7 +552,7 @@
       <div class="home-course-icon" style="background:#fffbf0">🎮</div>
       <div class="home-course-body">
         <div class="home-course-title">練習メニュー</div>
-        <div class="home-course-desc">部首・四声・数字クイズなど台湾語特有の要素をトレーニング</div>
+        <div class="home-course-desc">四声（声調）の違いを学ぼう。同じ音でも意味が変わる！</div>
       </div>
       <div class="home-course-arrow">›</div>
     </div>
@@ -741,26 +738,11 @@
   <!-- メニュー -->
   <div id="practice-menu">
     <section><h2>練習メニュー</h2></section>
-    <div class="practice-menu">
-      <button class="practice-card-btn" onclick="showPractice('chars')">
-        <div class="p-icon">🔤</div>
-        <div class="p-title">部首を覚えよう</div>
-        <div class="p-desc">基本部首15種類を学ぶ</div>
-      </button>
+    <div class="practice-menu" style="grid-template-columns:1fr">
       <button class="practice-card-btn" onclick="showPractice('tones')">
         <div class="p-icon">🎵</div>
         <div class="p-title">四声を覚えよう</div>
         <div class="p-desc">四声+軽声の違いを学ぶ</div>
-      </button>
-      <button class="practice-card-btn" onclick="showPractice('numbers')">
-        <div class="p-icon">🔢</div>
-        <div class="p-title">数字・金額クイズ</div>
-        <div class="p-desc">台湾ドルの読み方を練習</div>
-      </button>
-      <button class="practice-card-btn" onclick="showPractice('charquiz')">
-        <div class="p-icon">❓</div>
-        <div class="p-title">部首クイズ</div>
-        <div class="p-desc">部首の意味を当てよう</div>
       </button>
     </div>
   </div>
