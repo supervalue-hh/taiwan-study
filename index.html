@@ -291,6 +291,12 @@
   .goal-btn.selected { background: var(--black); color: var(--white); border-color: var(--black); }
   .goal-btn:hover:not(.selected) { border-color: var(--black); }
   .home-learned-nums { font-size: 1rem; font-weight: bold; }
+  .goal-btn-mini {
+    flex:1; padding: 4px 2px; border: 1px solid rgba(255,255,255,0.3); background: transparent;
+    font-size: 0.65rem; font-weight: bold; cursor: pointer; color: rgba(255,255,255,0.7);
+    transition: all 0.15s;
+  }
+  .goal-btn-mini.selected { background: var(--red); color: var(--white); border-color: var(--red); }
   .goal-achieved {
     display: inline-block; background: var(--red); color: var(--white);
     font-size: 0.75rem; font-weight: bold; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
@@ -428,80 +434,115 @@
 </nav>
 
 <!-- HOME SCREEN -->
-<div id="home" class="screen">
-  <section><h2>今日の学習</h2></section>
+<div id="home" class="screen" style="padding:0">
 
-  <div class="home-stat-block">
-    <div class="home-stat-row">
-      <span class="home-stat-label">⏱ 学習時間</span>
-      <span class="home-goal-label" id="home-goal">目標 10分</span>
+  <!-- ヒーローブロック：連続学習＋円形タイマー -->
+  <div style="background:var(--black);color:var(--white);padding:20px 16px 24px">
+    <!-- 上段：連続＋統計 -->
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <div style="flex:1;background:rgba(255,255,255,0.1);padding:12px;border-radius:4px">
+        <div style="font-size:0.6rem;letter-spacing:0.12em;opacity:0.7;margin-bottom:4px">🔥 連続学習日数</div>
+        <div style="font-size:2rem;font-weight:900;line-height:1"><span id="home-streak">0</span><span style="font-size:0.9rem;font-weight:normal;margin-left:2px">日</span></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="background:rgba(255,255,255,0.1);padding:8px 10px;border-radius:4px">
+          <div style="font-size:0.55rem;letter-spacing:0.1em;opacity:0.7;margin-bottom:2px">📚 覚えた単語</div>
+          <div style="font-size:1rem;font-weight:bold"><span id="home-learned">0</span><span style="opacity:0.6;font-size:0.8rem"> / <span id="home-total">0</span>語</span></div>
+        </div>
+        <div style="background:rgba(255,0,0,0.25);padding:8px 10px;border-radius:4px;border:1px solid var(--red)">
+          <div style="font-size:0.55rem;letter-spacing:0.1em;opacity:0.8;margin-bottom:2px">🎯 目標</div>
+          <div class="goal-btn-group" style="display:flex;gap:4px">
+            <button id="goal-btn-5"  class="goal-btn-mini" onclick="setDailyGoal(5)">5分</button>
+            <button id="goal-btn-10" class="goal-btn-mini" onclick="setDailyGoal(10)">10分</button>
+            <button id="goal-btn-15" class="goal-btn-mini" onclick="setDailyGoal(15)">15分</button>
+            <button id="goal-btn-30" class="goal-btn-mini" onclick="setDailyGoal(30)">30分</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="home-time-display" id="home-timer">0分0秒 <span id="home-goal-achieved"></span></div>
-    <div class="progress-bar-wrap" style="margin:8px 0 4px">
-      <div class="progress-bar" id="home-time-bar" style="width:0%;background:var(--red)"></div>
+
+    <!-- 円形タイマー＋週間バー -->
+    <div style="display:flex;align-items:center;gap:16px">
+      <!-- 円形 -->
+      <div style="position:relative;width:130px;height:130px;flex-shrink:0">
+        <svg width="130" height="130" style="transform:rotate(-90deg)">
+          <circle cx="65" cy="65" r="56" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10"/>
+          <circle id="ring-circle" cx="65" cy="65" r="56" fill="none" stroke="var(--red)" stroke-width="10"
+            stroke-dasharray="351.86" stroke-dashoffset="351.86" stroke-linecap="round" style="transition:stroke-dashoffset 0.8s ease"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div id="ring-h" style="font-size:1.7rem;font-weight:900;line-height:1">00</div>
+          <div style="font-size:0.55rem;opacity:0.6;letter-spacing:0.1em">時間</div>
+          <div id="ring-m" style="font-size:1.7rem;font-weight:900;line-height:1.1">00</div>
+          <div style="font-size:0.55rem;opacity:0.6;letter-spacing:0.1em">分</div>
+        </div>
+      </div>
+
+      <!-- 週間バー -->
+      <div style="flex:1">
+        <div style="font-size:0.6rem;letter-spacing:0.1em;opacity:0.7;margin-bottom:8px">今週の学習時間</div>
+        <div id="week-bars" style="display:flex;gap:3px;align-items:flex-end;height:70px"></div>
+        <div style="display:flex;gap:3px;margin-top:4px" id="week-labels"></div>
+      </div>
     </div>
-    <div style="text-align:right;font-size:0.75rem;color:var(--gray-dark)"><span id="home-time-pct">0</span>%</div>
+
+    <!-- 進捗テキスト -->
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:0.75rem;opacity:0.7">今日の目標 <span id="home-goal-label" style="color:var(--red);font-weight:bold">10分</span></div>
+      <div id="home-goal-achieved-new" style="font-size:0.75rem;font-weight:bold;color:var(--red)"></div>
+    </div>
+    <div style="margin-top:6px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px">
+      <div id="home-time-bar" style="height:100%;background:var(--red);border-radius:2px;width:0%;transition:width 0.5s ease"></div>
+    </div>
   </div>
 
-  <div class="home-stat-block">
-    <div class="home-stat-row">
-      <span class="home-stat-label">🔥 連続学習</span>
-    </div>
-    <div class="home-streak-display"><span id="home-streak">0</span>日</div>
+  <!-- アクションボタン -->
+  <div style="padding:16px">
+    <button class="btn-start" onclick="goStudy()" style="margin:0">📇 学習を始める →</button>
   </div>
 
-  <div class="home-stat-block">
-    <div class="home-stat-row">
-      <span class="home-stat-label">📚 覚えた単語</span>
-      <span class="home-learned-nums"><span id="home-learned">0</span> / <span id="home-total">0</span>語</span>
-    </div>
-    <div class="progress-bar-wrap" style="margin:8px 0 4px">
-      <div class="progress-bar" id="home-learned-bar" style="width:0%"></div>
-    </div>
-    <div style="text-align:right;font-size:0.75rem;color:var(--gray-dark)"><span id="home-learned-pct">0</span>%</div>
-  </div>
-
-  <div class="home-stat-block">
-    <div class="home-stat-label" style="margin-bottom:12px">🎯 1日の目標時間</div>
-    <div class="goal-btn-group">
-      <button id="goal-btn-5"  class="goal-btn" onclick="setDailyGoal(5)">5分</button>
-      <button id="goal-btn-10" class="goal-btn" onclick="setDailyGoal(10)">10分</button>
-      <button id="goal-btn-15" class="goal-btn" onclick="setDailyGoal(15)">15分</button>
-      <button id="goal-btn-30" class="goal-btn" onclick="setDailyGoal(30)">30分</button>
-    </div>
-  </div>
-
-  <button class="btn-start" onclick="goStudy()" style="margin-top:4px">📇 学習を始める →</button>
-
-  <!-- 学習履歴 -->
-  <div class="home-stat-block" style="margin-top:20px">
-    <div class="home-stat-label" style="margin-bottom:12px">📊 学習履歴</div>
-
-    <!-- 累計サマリー -->
+  <!-- 学習統計カード（TODAY / MONTH / TOTAL） -->
+  <div style="padding:0 16px 4px">
+    <div style="font-size:0.7rem;font-weight:bold;letter-spacing:0.12em;color:var(--gray-dark);margin-bottom:8px">STUDY STATS</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
-        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">TODAY</div>
-        <div id="hist-today" style="font-size:1.1rem;font-weight:bold"></div>
+      <div style="border:2px solid var(--black);padding:12px 6px;text-align:center">
+        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">TODAY</div>
+        <div id="hist-today" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
       </div>
       <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
-        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">THIS MONTH</div>
-        <div id="hist-month" style="font-size:1.1rem;font-weight:bold"></div>
+        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">THIS MONTH</div>
+        <div id="hist-month" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
       </div>
       <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
-        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">TOTAL</div>
-        <div id="hist-total" style="font-size:1.1rem;font-weight:bold"></div>
+        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">TOTAL</div>
+        <div id="hist-total" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
       </div>
     </div>
 
     <!-- カレンダー -->
-    <div id="study-calendar" style="margin-bottom:12px"></div>
+    <div style="font-size:0.7rem;font-weight:bold;letter-spacing:0.12em;color:var(--gray-dark);margin-bottom:8px">CALENDAR</div>
+    <div id="study-calendar" style="margin-bottom:20px"></div>
 
-    <!-- 直近7日 -->
-    <div style="font-size:0.72rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:6px">直近7日の学習時間</div>
-    <div id="hist-daily-bars" style="display:flex;gap:4px;align-items:flex-end;height:60px"></div>
+    <!-- 覚えた単語バー -->
+    <div style="border:1px solid var(--gray-mid);padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <span style="font-size:0.7rem;font-weight:bold;letter-spacing:0.1em;color:var(--gray-dark)">WORDS LEARNED</span>
+        <span style="font-size:0.85rem;font-weight:bold"><span id="home-learned2">0</span> / <span id="home-total2">0</span>語</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="home-learned-bar" style="width:0%"></div>
+      </div>
+      <div style="text-align:right;font-size:0.72rem;color:var(--gray-dark);margin-top:4px"><span id="home-learned-pct">0</span>%</div>
+    </div>
   </div>
 
-  <div style="margin-top:24px;border-top:1px solid var(--gray-mid);padding-top:16px">
+  <!-- hidden inputs for legacy JS compat -->
+  <span id="home-timer" style="display:none"></span>
+  <span id="home-time-pct" style="display:none">0</span>
+  <span id="home-goal" style="display:none"></span>
+  <span id="home-goal-achieved" style="display:none"></span>
+
+  <div style="padding:0 16px 24px;border-top:1px solid var(--gray-mid);margin-top:4px;padding-top:16px">
     <button onclick="confirmReset()"
       style="width:100%;padding:13px;border:1px solid var(--gray-mid);background:var(--white);color:var(--gray-dark);font-size:0.85rem;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
       🔄 学習データをリセット
@@ -1789,24 +1830,48 @@ function renderHome() {
   const todaySecs = getTodaySeconds();
   const goalSecs = dailyGoalMinutes * 60;
   const pct = Math.min(100, Math.round(todaySecs / goalSecs * 100));
-  const m = Math.floor(todaySecs / 60), s = todaySecs % 60;
   const learned = learnedWords.size;
   const total = getTotalWords();
   const lPct = total > 0 ? Math.round(learned / total * 100) : 0;
-  document.getElementById('home-timer').innerHTML =
-    `${m}分${s}秒 ${pct >= 100 ? '<span class="goal-achieved">🎉 達成！</span>' : ''}`;
-  document.getElementById('home-goal').textContent = `目標 ${dailyGoalMinutes}分`;
+
+  // 円形リング更新
+  const circumference = 2 * Math.PI * 56; // 351.86
+  const offset = circumference * (1 - Math.min(pct / 100, 1));
+  const ringEl = document.getElementById('ring-circle');
+  if (ringEl) ringEl.style.strokeDashoffset = offset;
+
+  // 時間表示（時:分）
+  const h = Math.floor(todaySecs / 3600);
+  const m = Math.floor((todaySecs % 3600) / 60);
+  const el_h = document.getElementById('ring-h');
+  const el_m = document.getElementById('ring-m');
+  if (el_h) el_h.textContent = String(h).padStart(2, '0');
+  if (el_m) el_m.textContent = String(m).padStart(2, '0');
+
+  // 進捗バー・目標
   document.getElementById('home-time-bar').style.width = pct + '%';
-  document.getElementById('home-time-pct').textContent = pct;
+  const goalLbl = document.getElementById('home-goal-label');
+  if (goalLbl) goalLbl.textContent = `${dailyGoalMinutes}分`;
+  const achLbl = document.getElementById('home-goal-achieved-new');
+  if (achLbl) achLbl.textContent = pct >= 100 ? '🎉 目標達成！' : `${pct}%`;
+
+  // 連続・単語
   document.getElementById('home-streak').textContent = getStreak();
   document.getElementById('home-learned').textContent = learned;
   document.getElementById('home-total').textContent = total;
+  const hl2 = document.getElementById('home-learned2');
+  const ht2 = document.getElementById('home-total2');
+  if (hl2) hl2.textContent = learned;
+  if (ht2) ht2.textContent = total;
   document.getElementById('home-learned-bar').style.width = lPct + '%';
   document.getElementById('home-learned-pct').textContent = lPct;
+
+  // 目標ボタン（mini版）
   [5, 10, 15, 30].forEach(n => {
     const b = document.getElementById(`goal-btn-${n}`);
     if (b) b.classList.toggle('selected', n === dailyGoalMinutes);
   });
+
   renderStudyHistory();
 }
 
@@ -1881,26 +1946,38 @@ function renderCalendar(data, today) {
 }
 
 function renderDailyBars(data, today) {
-  const bars = document.getElementById('hist-daily-bars');
+  // ヒーロー内の週間バー（白背景用）
+  const weekBars = document.getElementById('week-bars');
+  const weekLabels = document.getElementById('week-labels');
+  const DOW_JA = ['日','月','火','水','木','金','土'];
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today + 'T00:00:00');
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
     const secs = (data[key] || 0) + (key === today ? sessionElapsed : 0);
-    days.push({ key, secs, label: `${d.getMonth() + 1}/${d.getDate()}` });
+    days.push({ key, secs, dow: d.getDay(), label: DOW_JA[d.getDay()] });
   }
-  const max = Math.max(...days.map(d => d.secs), 1);
-  bars.innerHTML = days.map(d => {
-    const h = Math.round((d.secs / max) * 52);
-    const isToday = d.key === today;
-    const label = fmtSecs(d.secs);
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-      <div style="font-size:0.6rem;color:var(--gray-dark)">${d.secs > 0 ? label : ''}</div>
-      <div style="width:100%;height:${h}px;background:${isToday ? 'var(--black)' : d.secs > 0 ? 'var(--red)' : 'var(--gray-mid)'};min-height:2px"></div>
-      <div style="font-size:0.6rem;color:${isToday ? 'var(--black)' : 'var(--gray-dark)'};font-weight:${isToday ? 'bold' : 'normal'}">${d.label}</div>
-    </div>`;
-  }).join('');
+  const max = Math.max(...days.map(d => d.secs), 60);
+  if (weekBars) {
+    weekBars.innerHTML = days.map(d => {
+      const h = Math.max(Math.round((d.secs / max) * 62), d.secs > 0 ? 4 : 2);
+      const isToday = d.key === today;
+      const bg = isToday ? 'var(--white)' : d.secs > 0 ? 'var(--red)' : 'rgba(255,255,255,0.2)';
+      const timeLabel = d.secs > 0 ? fmtSecs(d.secs) : '';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:70px">
+        <div style="font-size:0.52rem;color:${isToday ? 'var(--white)' : 'rgba(255,255,255,0.6)'}">${timeLabel}</div>
+        <div style="width:100%;height:${h}px;background:${bg};border-radius:2px 2px 0 0;${isToday ? 'outline:2px solid var(--white);' : ''}"></div>
+      </div>`;
+    }).join('');
+  }
+  if (weekLabels) {
+    weekLabels.innerHTML = days.map(d => {
+      const isToday = d.key === today;
+      const col = isToday ? 'var(--white)' : d.dow === 0 ? 'var(--red)' : 'rgba(255,255,255,0.55)';
+      return `<div style="flex:1;font-size:0.6rem;text-align:center;color:${col};font-weight:${isToday ? 'bold' : 'normal'}">${d.label}</div>`;
+    }).join('');
+  }
 }
 
 function confirmReset() {
