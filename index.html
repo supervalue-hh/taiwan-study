@@ -473,6 +473,34 @@
 
   <button class="btn-start" onclick="goStudy()" style="margin-top:4px">📇 学習を始める →</button>
 
+  <!-- 学習履歴 -->
+  <div class="home-stat-block" style="margin-top:20px">
+    <div class="home-stat-label" style="margin-bottom:12px">📊 学習履歴</div>
+
+    <!-- 累計サマリー -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
+        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">TODAY</div>
+        <div id="hist-today" style="font-size:1.1rem;font-weight:bold"></div>
+      </div>
+      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
+        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">THIS MONTH</div>
+        <div id="hist-month" style="font-size:1.1rem;font-weight:bold"></div>
+      </div>
+      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
+        <div style="font-size:0.65rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:4px">TOTAL</div>
+        <div id="hist-total" style="font-size:1.1rem;font-weight:bold"></div>
+      </div>
+    </div>
+
+    <!-- カレンダー -->
+    <div id="study-calendar" style="margin-bottom:12px"></div>
+
+    <!-- 直近7日 -->
+    <div style="font-size:0.72rem;color:var(--gray-dark);letter-spacing:0.05em;margin-bottom:6px">直近7日の学習時間</div>
+    <div id="hist-daily-bars" style="display:flex;gap:4px;align-items:flex-end;height:60px"></div>
+  </div>
+
   <div style="margin-top:24px;border-top:1px solid var(--gray-mid);padding-top:16px">
     <button onclick="confirmReset()"
       style="width:100%;padding:13px;border:1px solid var(--gray-mid);background:var(--white);color:var(--gray-dark);font-size:0.85rem;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
@@ -1779,6 +1807,100 @@ function renderHome() {
     const b = document.getElementById(`goal-btn-${n}`);
     if (b) b.classList.toggle('selected', n === dailyGoalMinutes);
   });
+  renderStudyHistory();
+}
+
+function fmtSecs(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h${m}m`;
+  return `${m}分`;
+}
+
+function renderStudyHistory() {
+  const data = JSON.parse(localStorage.getItem('taiwan_study_time') || '{}');
+  const today = todayStr();
+  const todaySecs = (data[today] || 0) + sessionElapsed;
+
+  // 月合計
+  const ym = today.slice(0, 7);
+  const monthSecs = Object.entries(data).reduce((acc, [k, v]) => k.startsWith(ym) ? acc + v : acc, 0)
+    + (today.startsWith(ym) ? sessionElapsed : 0);
+
+  // 累計
+  const totalSecs = Object.values(data).reduce((a, b) => a + b, 0) + sessionElapsed;
+
+  document.getElementById('hist-today').textContent = fmtSecs(todaySecs);
+  document.getElementById('hist-month').textContent = fmtSecs(monthSecs);
+  document.getElementById('hist-total').textContent = fmtSecs(totalSecs);
+
+  renderCalendar(data, today);
+  renderDailyBars(data, today);
+}
+
+function renderCalendar(data, today) {
+  const d = new Date(today + 'T00:00:00');
+  const year = d.getFullYear(), month = d.getMonth();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const ym = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const cal = document.getElementById('study-calendar');
+
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+  html += `<span style="font-size:0.85rem;font-weight:bold;">${year}年${month + 1}月</span></div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">`;
+
+  // 曜日ヘッダー
+  ['日','月','火','水','木','金','土'].forEach((d, i) => {
+    const col = i === 0 ? 'var(--red)' : i === 6 ? '#4477cc' : 'var(--gray-dark)';
+    html += `<div style="font-size:0.65rem;color:${col};padding:2px 0;font-weight:bold">${d}</div>`;
+  });
+
+  // 空白
+  for (let i = 0; i < firstDay; i++) html += `<div></div>`;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${ym}-${String(day).padStart(2, '0')}`;
+    const secs = (data[key] || 0) + (key === today ? sessionElapsed : 0);
+    const isToday = key === today;
+    const studied = secs > 0;
+    const dow = (firstDay + day - 1) % 7;
+    const textCol = isToday ? 'var(--white)' : studied ? 'var(--white)' : dow === 0 ? 'var(--red)' : dow === 6 ? '#4477cc' : 'var(--black)';
+    const bg = isToday ? 'var(--black)' : studied ? 'var(--red)' : 'transparent';
+    const border = isToday ? '2px solid var(--black)' : '1px solid var(--gray-mid)';
+    html += `<div style="font-size:0.75rem;padding:4px 2px;background:${bg};color:${textCol};border:${border};border-radius:2px;position:relative" title="${studied ? fmtSecs(secs) : ''}">${day}${studied && !isToday ? '' : ''}</div>`;
+  }
+
+  html += `</div>`;
+  html += `<div style="display:flex;gap:12px;margin-top:6px;font-size:0.65rem;color:var(--gray-dark)">`;
+  html += `<span><span style="display:inline-block;width:10px;height:10px;background:var(--red);vertical-align:middle;margin-right:3px"></span>学習あり</span>`;
+  html += `<span><span style="display:inline-block;width:10px;height:10px;background:var(--black);vertical-align:middle;margin-right:3px"></span>今日</span>`;
+  html += `</div>`;
+
+  cal.innerHTML = html;
+}
+
+function renderDailyBars(data, today) {
+  const bars = document.getElementById('hist-daily-bars');
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today + 'T00:00:00');
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const secs = (data[key] || 0) + (key === today ? sessionElapsed : 0);
+    days.push({ key, secs, label: `${d.getMonth() + 1}/${d.getDate()}` });
+  }
+  const max = Math.max(...days.map(d => d.secs), 1);
+  bars.innerHTML = days.map(d => {
+    const h = Math.round((d.secs / max) * 52);
+    const isToday = d.key === today;
+    const label = fmtSecs(d.secs);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="font-size:0.6rem;color:var(--gray-dark)">${d.secs > 0 ? label : ''}</div>
+      <div style="width:100%;height:${h}px;background:${isToday ? 'var(--black)' : d.secs > 0 ? 'var(--red)' : 'var(--gray-mid)'};min-height:2px"></div>
+      <div style="font-size:0.6rem;color:${isToday ? 'var(--black)' : 'var(--gray-dark)'};font-weight:${isToday ? 'bold' : 'normal'}">${d.label}</div>
+    </div>`;
+  }).join('');
 }
 
 function confirmReset() {
