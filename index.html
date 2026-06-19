@@ -522,9 +522,8 @@
     <button class="btn-known" onclick="judgeCard(true)">✓ わかった</button>
   </div>
 
-  <div class="card-controls">
+  <div id="back-btn-wrap" style="text-align:center;margin-top:10px;display:none">
     <button class="btn-prev" onclick="prevCard()">◀ 前へ</button>
-    <button class="btn-next" onclick="nextCard()">次へ ▶</button>
   </div>
 
   <div id="flash-result" style="display:none" class="flash-result">
@@ -1160,7 +1159,6 @@ function setFlashCat(c) {
   document.getElementById('flash-result').style.display = 'none';
   document.getElementById('judge-controls').style.display = 'none';
   document.getElementById('flash-card').style.display = 'block';
-  document.querySelector('.card-controls').style.display = 'flex';
   renderCard();
 }
 function setQuizCat(c) { quizCat = c; renderCats(); }
@@ -1182,7 +1180,6 @@ function setFlashCatReview() {
   document.getElementById('flash-result').style.display = 'none';
   document.getElementById('judge-controls').style.display = 'none';
   document.getElementById('flash-card').style.display = 'block';
-  document.querySelector('.card-controls').style.display = 'flex';
   renderCard();
 }
 function setQuizCatReview() { quizCat = '__review__'; renderCats(); }
@@ -1208,6 +1205,7 @@ function renderCard() {
   card.style.transition = 'none'; card.classList.remove('flipped');
   card.offsetHeight; card.style.transition = '';
   document.getElementById('judge-controls').style.display = 'none';
+  document.getElementById('back-btn-wrap').style.display = flashIdx > 0 ? 'block' : 'none';
   flashFlipped = false;
   const cat = flashReviewMode ? (w._cat || flashCat) : flashCat;
   document.getElementById('bookmark-btn').classList.toggle('active', bookmarks.has(bookmarkKey(cat, w)));
@@ -1242,7 +1240,6 @@ function toggleBookmark() {
 function showFlashResult() {
   document.getElementById('judge-controls').style.display = 'none';
   document.getElementById('flash-card').style.display = 'none';
-  document.querySelector('.card-controls').style.display = 'none';
   const total = flashKnown.length;
   const knownCount = flashKnown.filter(x => x === true).length;
   const unknownCount = flashKnown.filter(x => x === false).length;
@@ -1264,13 +1261,11 @@ function showFlashResult() {
 function retryFlash() {
   document.getElementById('flash-result').style.display = 'none';
   document.getElementById('flash-card').style.display = 'block';
-  document.querySelector('.card-controls').style.display = 'flex';
   if (flashReviewMode) setFlashCatReview(); else { shuffleFlash(); renderCard(); }
 }
 function startReviewMode() {
   document.getElementById('flash-result').style.display = 'none';
   document.getElementById('flash-card').style.display = 'block';
-  document.querySelector('.card-controls').style.display = 'flex';
   setFlashCatReview();
 }
 function nextCard() {
