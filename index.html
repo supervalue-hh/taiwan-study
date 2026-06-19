@@ -297,6 +297,24 @@
     transition: all 0.15s;
   }
   .goal-btn-mini.selected { background: var(--red); color: var(--white); border-color: var(--red); }
+
+  /* コースカード（スタディサプリ風） */
+  .home-course-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px; background: var(--white);
+    border-bottom: 1px solid var(--gray-light);
+    cursor: pointer; transition: background 0.12s;
+  }
+  .home-course-card:hover { background: var(--gray-light); }
+  .home-course-icon {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .home-course-body { flex: 1; min-width: 0; }
+  .home-course-title { font-size: 0.95rem; font-weight: 900; color: var(--black); margin-bottom: 3px; letter-spacing: 0.02em; }
+  .home-course-desc { font-size: 0.72rem; color: var(--gray-dark); line-height: 1.4; }
+  .home-course-arrow { font-size: 1.4rem; color: var(--gray-mid); font-weight: bold; flex-shrink: 0; }
   .goal-achieved {
     display: inline-block; background: var(--red); color: var(--white);
     font-size: 0.75rem; font-weight: bold; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
@@ -496,57 +514,111 @@
     </div>
   </div>
 
-  <!-- アクションボタン -->
-  <div style="padding:16px">
-    <button class="btn-start" onclick="goStudy()" style="margin:0">📇 学習を始める →</button>
-  </div>
+  <!-- コースリスト（スタディサプリ風） -->
+  <div style="background:var(--white)">
 
-  <!-- 学習統計カード（TODAY / MONTH / TOTAL） -->
-  <div style="padding:0 16px 4px">
-    <div style="font-size:0.7rem;font-weight:bold;letter-spacing:0.12em;color:var(--gray-dark);margin-bottom:8px">STUDY STATS</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-      <div style="border:2px solid var(--black);padding:12px 6px;text-align:center">
-        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">TODAY</div>
-        <div id="hist-today" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
+    <!-- セクションラベル -->
+    <div style="padding:18px 16px 8px;font-size:0.7rem;font-weight:900;letter-spacing:0.15em;color:var(--gray-dark)">COURSES</div>
+
+    <!-- フラッシュカード -->
+    <div class="home-course-card" onclick="showScreen('flash')">
+      <div class="home-course-icon" style="background:#fff0f0">📇</div>
+      <div class="home-course-body">
+        <div class="home-course-title">フラッシュカード</div>
+        <div class="home-course-desc">カテゴリ別に単語をカードで学習。タップして答えを確認しよう</div>
       </div>
-      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
-        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">THIS MONTH</div>
-        <div id="hist-month" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
-      </div>
-      <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
-        <div style="font-size:0.6rem;color:var(--gray-dark);letter-spacing:0.08em;margin-bottom:6px">TOTAL</div>
-        <div id="hist-total" style="font-size:1.2rem;font-weight:900;color:var(--black)">0分</div>
-      </div>
+      <div class="home-course-arrow">›</div>
     </div>
 
-    <!-- カレンダー -->
-    <div style="font-size:0.7rem;font-weight:bold;letter-spacing:0.12em;color:var(--gray-dark);margin-bottom:8px">CALENDAR</div>
-    <div id="study-calendar" style="margin-bottom:20px"></div>
-
-    <!-- 覚えた単語バー -->
-    <div style="border:1px solid var(--gray-mid);padding:14px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-        <span style="font-size:0.7rem;font-weight:bold;letter-spacing:0.1em;color:var(--gray-dark)">WORDS LEARNED</span>
-        <span style="font-size:0.85rem;font-weight:bold"><span id="home-learned2">0</span> / <span id="home-total2">0</span>語</span>
+    <!-- クイズ -->
+    <div class="home-course-card" onclick="showScreen('quiz')">
+      <div class="home-course-icon" style="background:#f0f4ff">❓</div>
+      <div class="home-course-body">
+        <div class="home-course-title">クイズ</div>
+        <div class="home-course-desc">4択問題で理解度をチェック。間違えた問題は復習リストへ</div>
       </div>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="home-learned-bar" style="width:0%"></div>
-      </div>
-      <div style="text-align:right;font-size:0.72rem;color:var(--gray-dark);margin-top:4px"><span id="home-learned-pct">0</span>%</div>
+      <div class="home-course-arrow">›</div>
     </div>
-  </div>
 
-  <!-- hidden inputs for legacy JS compat -->
-  <span id="home-timer" style="display:none"></span>
-  <span id="home-time-pct" style="display:none">0</span>
-  <span id="home-goal" style="display:none"></span>
-  <span id="home-goal-achieved" style="display:none"></span>
+    <!-- フレーズ -->
+    <div class="home-course-card" onclick="showScreen('phrase')">
+      <div class="home-course-icon" style="background:#f0fff4">🗣</div>
+      <div class="home-course-body">
+        <div class="home-course-title">フレーズ集</div>
+        <div class="home-course-desc">場面別の便利フレーズ。緊急時・ショッピング・観光など全6カテゴリ</div>
+      </div>
+      <div class="home-course-arrow">›</div>
+    </div>
 
-  <div style="padding:0 16px 24px;border-top:1px solid var(--gray-mid);margin-top:4px;padding-top:16px">
-    <button onclick="confirmReset()"
-      style="width:100%;padding:13px;border:1px solid var(--gray-mid);background:var(--white);color:var(--gray-dark);font-size:0.85rem;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
-      🔄 学習データをリセット
-    </button>
+    <!-- 練習 -->
+    <div class="home-course-card" onclick="showScreen('practice')">
+      <div class="home-course-icon" style="background:#fffbf0">🎮</div>
+      <div class="home-course-body">
+        <div class="home-course-title">練習メニュー</div>
+        <div class="home-course-desc">部首・四声・数字クイズなど台湾語特有の要素をトレーニング</div>
+      </div>
+      <div class="home-course-arrow">›</div>
+    </div>
+
+    <!-- 復習リスト -->
+    <div class="home-course-card" onclick="showScreen('review')">
+      <div class="home-course-icon" style="background:#f5f0ff">📌</div>
+      <div class="home-course-body">
+        <div class="home-course-title">復習リスト <span id="nav-review-badge-home" style="display:none;background:var(--red);color:var(--white);font-size:0.6rem;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle"></span></div>
+        <div class="home-course-desc">ブックマークした単語・わからなかった単語を集中復習</div>
+      </div>
+      <div class="home-course-arrow">›</div>
+    </div>
+
+    <!-- セクションラベル -->
+    <div style="padding:18px 16px 8px;font-size:0.7rem;font-weight:900;letter-spacing:0.15em;color:var(--gray-dark)">STUDY STATS</div>
+
+    <!-- 学習統計カード -->
+    <div style="padding:0 16px 16px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+        <div style="border:2px solid var(--black);padding:12px 6px;text-align:center">
+          <div style="font-size:0.58rem;color:var(--gray-dark);letter-spacing:0.06em;margin-bottom:6px">TODAY</div>
+          <div id="hist-today" style="font-size:1.1rem;font-weight:900;color:var(--black)">0分</div>
+        </div>
+        <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
+          <div style="font-size:0.58rem;color:var(--gray-dark);letter-spacing:0.06em;margin-bottom:6px">THIS MONTH</div>
+          <div id="hist-month" style="font-size:1.1rem;font-weight:900;color:var(--black)">0分</div>
+        </div>
+        <div style="border:1px solid var(--gray-mid);padding:12px 6px;text-align:center">
+          <div style="font-size:0.58rem;color:var(--gray-dark);letter-spacing:0.06em;margin-bottom:6px">TOTAL</div>
+          <div id="hist-total" style="font-size:1.1rem;font-weight:900;color:var(--black)">0分</div>
+        </div>
+      </div>
+
+      <!-- 覚えた単語バー -->
+      <div style="border:1px solid var(--gray-mid);padding:14px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <span style="font-size:0.7rem;font-weight:bold;letter-spacing:0.1em;color:var(--gray-dark)">WORDS LEARNED</span>
+          <span style="font-size:0.85rem;font-weight:bold"><span id="home-learned2">0</span> / <span id="home-total2">0</span>語</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="home-learned-bar" style="width:0%"></div>
+        </div>
+        <div style="text-align:right;font-size:0.72rem;color:var(--gray-dark);margin-top:4px"><span id="home-learned-pct">0</span>%</div>
+      </div>
+
+      <!-- カレンダー -->
+      <div style="font-size:0.7rem;font-weight:bold;letter-spacing:0.12em;color:var(--gray-dark);margin-bottom:8px">CALENDAR</div>
+      <div id="study-calendar" style="margin-bottom:20px"></div>
+    </div>
+
+    <!-- hidden inputs for legacy JS compat -->
+    <span id="home-timer" style="display:none"></span>
+    <span id="home-time-pct" style="display:none">0</span>
+    <span id="home-goal" style="display:none"></span>
+    <span id="home-goal-achieved" style="display:none"></span>
+
+    <div style="padding:0 16px 32px">
+      <button onclick="confirmReset()"
+        style="width:100%;padding:13px;border:1px solid var(--gray-mid);background:var(--white);color:var(--gray-dark);font-size:0.85rem;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
+        🔄 学習データをリセット
+      </button>
+    </div>
   </div>
 </div>
 
