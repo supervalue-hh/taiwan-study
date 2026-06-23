@@ -434,14 +434,19 @@
 </head>
 <body>
 
-<!-- パスワード画面（無効化済み） -->
-<div id="pw-screen" style="display:none;">
+<!-- パスワード画面 -->
+<div id="pw-screen" style="position:fixed;inset:0;background:var(--white);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;">
   <div style="width:100%;max-width:360px;text-align:center;">
-    <input id="pw-input" type="password">
-    <div id="pw-error"></div>
+    <div style="font-size:2.5rem;margin-bottom:12px">🇹🇼</div>
+    <div style="font-size:0.75rem;font-weight:bold;letter-spacing:0.2em;color:var(--gray-dark);margin-bottom:4px">OIC GROUP</div>
+    <div style="font-size:1.1rem;font-weight:900;letter-spacing:0.08em;margin-bottom:2px">LANGUAGE LEARNING APP</div>
+    <div style="font-size:0.65rem;letter-spacing:0.15em;color:var(--gray-dark);margin-bottom:32px">PRESENTED BY HAMANO</div>
+    <input id="pw-input" type="password" placeholder="パスワードを入力"
+      style="width:100%;padding:14px;border:2px solid var(--black);font-size:1rem;outline:none;margin-bottom:10px;letter-spacing:0.1em;text-align:center;"
+      onkeydown="if(event.key==='Enter')checkPw()">
     <div id="pw-error" style="color:var(--red);font-size:0.82rem;margin-bottom:10px;display:none">パスワードが違います。管理者にお問い合わせください。</div>
     <button onclick="checkPw()"
-      style="width:100%;padding:14px;background:var(--black);color:var(--white);border:none;font-size:0.9rem;font-weight:bold;letter-spacing:0.1em;cursor:pointer;">
+      style="width:100%;padding:14px;background:var(--red);color:var(--white);border:none;font-size:0.9rem;font-weight:bold;letter-spacing:0.1em;cursor:pointer;">
       ENTER
     </button>
   </div>
@@ -1753,8 +1758,8 @@ function tryGoogleTTS(text, btn) {
 // ===== パスワード認証 =====
 function checkPw() {
   const input = document.getElementById('pw-input').value;
-  if (input === 'ilovetaiwan') {
-    sessionStorage.setItem('taiwan_auth', '1');
+  if (input === 'oictaiwan') {
+    localStorage.setItem('taiwan_auth', '1');
     document.getElementById('pw-screen').style.display = 'none';
   } else {
     document.getElementById('pw-error').style.display = 'block';
@@ -1762,7 +1767,7 @@ function checkPw() {
     document.getElementById('pw-input').focus();
   }
 }
-if (sessionStorage.getItem('taiwan_auth') === '1') {
+if (localStorage.getItem('taiwan_auth') === '1') {
   document.getElementById('pw-screen').style.display = 'none';
 }
 
